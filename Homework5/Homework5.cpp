@@ -80,6 +80,8 @@ class CMailBody
   public:
                    CMailBody                               ( int               size,
                                                              const char      * data );
+                   CMailBody                               ( int               size,
+                                                             char      * data ) {   } // foo constructor
      // copy cons/op=/destructor is correctly implemented in the testing environment
     friend ostream & operator <<                           ( ostream         & os,
                                                              const CMailBody & x )
@@ -163,7 +165,9 @@ CAttach::CAttach(const CAttach &x)
 
 CAttach& CAttach::operator =(const CAttach &x)
 {
-	return CAttach();
+	CAttach foo = x;
+	return foo;
+
 }
 //=================================================================================================
 #endif /* __PROGTEST__, DO NOT remove */
@@ -205,7 +209,10 @@ CMail::CMail (const CTimeStamp &timeStamp, const string &from,
 // the fields are to be separated by a single space (with an exception for the attachment,
 // see the exact format in the enclosed archive).
 // Indeed, the operator is not tested in the testing environment, the purpose of the operator is to simplify testing.
-ostream & operator << (ostream & os, const CMail & x);
+ostream & operator << (ostream & os, const CMail & x)
+{
+	return os;
+}
 
 
 const string & CMail::From(void) const
@@ -215,17 +222,17 @@ const string & CMail::From(void) const
 
 const CMailBody & CMail::Body(void) const
 {
-	return CMailBody();
+	return CMailBody(5, "foostr");
 }
 
 const CTimeStamp & CMail::TimeStamp(void) const
 {
-	return CTimeStamp();
+	return CTimeStamp(0, 0, 0, 0, 0, 0);
 }
 
 const CAttach* CMail::Attachment(void) const
 {
-	return CAttach();
+	return NULL;
 }
 
 //=================================================================================================
@@ -284,17 +291,18 @@ bool CMailBox::NewFolder(const string &folderName)
 bool CMailBox::MoveMail(const string &fromFolder,
 		const string &toFolder)
 {
-
+	return true;
 }
 
 // ListMail (fld, from, to)
 // The method returns a list of e-mails selected from folder fld, moreover,
 // the e-mails will be returned if the e-mail time stamp fits the time interval (from - to, both inclusive).
 // If the folder does not exist, the method returns an empty list.
-CMailBox::list<CMail> CMailBox::ListMail(const string &folderName,
+list<CMail> CMailBox::ListMail(const string &folderName,
 		const CTimeStamp &from, const CTimeStamp &to) const
 {
-
+	list<CMail> foolist;
+	return foolist;
 }
 
 // ListAddr (from, to)
@@ -302,8 +310,8 @@ CMailBox::list<CMail> CMailBox::ListMail(const string &folderName,
 // The addresses will be selected from the e-mail that fits into the interval (from - to, both inclusive).
 // The method shall search all folders.
 // If no mail fits the time interval, the returned set will be empty.
-CMailBox::set<string> CMailBox::ListAddr(const CTimeStamp &from,
-		const CTimeStamp &to) const
+set<string> CMailBox::ListAddr(const CTimeStamp &from,
+							   const CTimeStamp &to) const
 {
 
 }
