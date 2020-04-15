@@ -108,14 +108,16 @@ ostream & operator << (ostream & os, const CTimeStamp & x)
 // kept in the conditional compile block (as shown in the attached file).
 class CMailBody
 {
-  public:
-                   CMailBody                               ( int               size,
-                                                             const char      * data );
+public:
+	CMailBody(int size, const char * data);
      // copy cons/op=/destructor is correctly implemented in the testing environment
-    friend ostream & operator <<                           ( ostream         & os,
-                                                             const CMailBody & x )
+	CMailBody(const CMailBody & orig); // Copy constructor
+	~CMailBody();
+	CMailBody & operator = (const CMailBody & orig);
+
+	friend ostream & operator << (ostream & os, const CMailBody & x)
     {
-      return os << "mail body: " << x . m_Size << " B";
+    	return os << "mail body: " << x . m_Size << " B";
     }
   private:
     int            m_Size;
@@ -125,8 +127,37 @@ class CMailBody
 CMailBody::CMailBody(int size, const char *data)
 {
 	this->m_Size = size;
-
+	this->m_Data = new char [size];
+	memcpy(this->m_Data, data, size);
 }
+
+CMailBody::CMailBody(const CMailBody & orig)
+{
+	 this->m_Size = orig.m_Size;
+	 this->m_Data = new char [orig.m_Size];
+	 memcpy(this->m_Data, orig.m_Data, orig.m_Size);
+}
+
+CMailBody::~CMailBody()
+{
+	delete [] this->m_Data;
+}
+
+CMailBody & CMailBody::operator = (const CMailBody & orig)
+{
+	if (this == &orig) {
+		return *this;
+	}
+	delete [] m_Data;
+	this->m_Size = orig.m_Size;
+	this->m_Data = new char [orig.m_Size];
+	memcpy(this->m_Data, orig.m_Data, orig.m_Size);
+
+	return *this;
+}
+
+
+
 //=================================================================================================
 // CAttach
 // This class represents mail attachment.
