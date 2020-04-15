@@ -40,6 +40,8 @@ class CTimeStamp
     int            Compare                                 ( const CTimeStamp & x ) const;
     friend ostream & operator <<                           ( ostream          & os,
                                                              const CTimeStamp & x );
+  private:
+
 };
 
 CTimeStamp::CTimeStamp(int year, int month, int day, int hour,
@@ -80,8 +82,6 @@ class CMailBody
   public:
                    CMailBody                               ( int               size,
                                                              const char      * data );
-                   CMailBody                               ( int               size,
-                                                             char      * data ) {   } // foo constructor
      // copy cons/op=/destructor is correctly implemented in the testing environment
     friend ostream & operator <<                           ( ostream         & os,
                                                              const CMailBody & x )
@@ -92,6 +92,11 @@ class CMailBody
     int            m_Size;
     char         * m_Data;
 };
+
+CMailBody::CMailBody(int size, const char *data)
+{
+
+}
 //=================================================================================================
 // CAttach
 // This class represents mail attachment.
@@ -222,7 +227,9 @@ const string & CMail::From(void) const
 
 const CMailBody & CMail::Body(void) const
 {
-	return CMailBody(5, "foostr");
+	const char *s = "foostr";
+	CMailBody *mb = new CMailBody(5, s);
+	return *mb;
 }
 
 const CTimeStamp & CMail::TimeStamp(void) const
