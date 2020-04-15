@@ -41,13 +41,23 @@ class CTimeStamp
     friend ostream & operator <<                           ( ostream          & os,
                                                              const CTimeStamp & x );
   private:
-
+    int m_Year;
+    int m_Month;
+    int m_Day;
+    int m_Hour;
+    int m_Minute;
+    int m_Sec;
 };
 
 CTimeStamp::CTimeStamp(int year, int month, int day, int hour,
 					   int minute, int sec)
 {
-
+	this->m_Year = year;
+	this->m_Month = month;
+	this->m_Day = day;
+	this->m_Hour = hour;
+	this->m_Minute = minute;
+	this->m_Sec = sec;
 }
 
 // Compare (x)
@@ -56,19 +66,38 @@ CTimeStamp::CTimeStamp(int year, int month, int day, int hour,
 // or positive (the instance is bigger than x).
 int CTimeStamp::Compare(const CTimeStamp &x) const
 {
-	return 0;
+	int diff;
+	diff = this->m_Year - x.m_Year;
+	if (diff != 0) {
+		return diff;
+	}
+	diff = this->m_Month - x.m_Month;
+	if (diff != 0) {
+			return diff;
+	}
+	diff = this->m_Day - x.m_Day;
+	if (diff != 0) {
+		return diff;
+	}
+	diff = this->m_Hour - x.m_Hour;
+	if (diff != 0) {
+		return diff;
+	}
+	diff = this->m_Minute - x.m_Minute;
+	if (diff != 0) {
+		return diff;
+	}
+	return this->m_Sec - x.m_Sec;
 }
 
 // output operator
 // displays the time stamp in format YYYY-MM-DD HH24:MI:SS.
 ostream & operator << (ostream & os, const CTimeStamp & x)
 {
+	os << setw(4) << setfill('0') << x.m_Year << "-" << setw(2) << x.m_Month << "-" << x.m_Day << " "
+			<< x.m_Hour << ":" << x.m_Minute << ":" << x.m_Sec;
 	return os;
 }
-
-
-
-
 
 //=================================================================================================
 // CMailBody
@@ -95,6 +124,7 @@ class CMailBody
 
 CMailBody::CMailBody(int size, const char *data)
 {
+	this->m_Size = size;
 
 }
 //=================================================================================================
