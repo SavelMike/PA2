@@ -50,7 +50,7 @@ class CTimeStamp
     int m_Sec;
 };
 
-// constructor
+// constructor CTimeStamp class
 CTimeStamp::CTimeStamp(int year, int month, int day, int hour,
 					   int minute, int sec)
 {
@@ -259,7 +259,10 @@ class CMail
     friend ostream & operator <<                           ( ostream          & os,
                                                              const CMail      & x );
   private:
-    // todo
+    CTimeStamp m_TimeStamp;
+    string m_From;
+    CMailBody m_Body;
+    const CAttach * m_Attach;
 };
 
 // constructor
@@ -267,8 +270,9 @@ class CMail
 // Parameter attach may be NULL indicating an e-mail without an attachment,
 CMail::CMail (const CTimeStamp &timeStamp, const string &from,
 			  const CMailBody &body, const CAttach *attach)
+:m_TimeStamp(timeStamp), m_From(from), m_Body(body)
 {
-
+	this->m_Attach = attach;
 }
 
 // output operator
@@ -279,30 +283,29 @@ CMail::CMail (const CTimeStamp &timeStamp, const string &from,
 // Indeed, the operator is not tested in the testing environment, the purpose of the operator is to simplify testing.
 ostream & operator << (ostream & os, const CMail & x)
 {
+	os << x.m_TimeStamp << " " << x.m_From << " " << x.m_Body << " " << *x.m_Attach;
 	return os;
 }
 
 
 const string & CMail::From(void) const
 {
-	return string();
+	return this->m_From;
 }
 
 const CMailBody & CMail::Body(void) const
 {
-	const char *s = "foostr";
-	CMailBody *mb = new CMailBody(5, s);
-	return *mb;
+	return this->m_Body;
 }
 
 const CTimeStamp & CMail::TimeStamp(void) const
 {
-	return CTimeStamp(0, 0, 0, 0, 0, 0);
+	return this->m_TimeStamp;
 }
 
 const CAttach* CMail::Attachment(void) const
 {
-	return NULL;
+	return this->m_Attach;
 }
 
 //=================================================================================================
