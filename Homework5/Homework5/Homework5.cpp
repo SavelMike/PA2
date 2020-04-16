@@ -364,6 +364,8 @@ CMailBox::CMailBox()
 // or false (failure, however, delivery shall not fail).
 bool CMailBox::Delivery(const CMail& mail)
 {
+    // We have to find folder 'inbox'
+    this->m_Folders[0].addMail(mail);
     return true;
 }
 
