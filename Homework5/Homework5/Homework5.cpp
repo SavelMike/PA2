@@ -348,11 +348,14 @@ public:
 private:
     vector<CFolder> m_Folders;
 };
+
 // constructor
 //	creates an empty mailbox (no mail). Moreover, the new mailbox will contain one folder inbox.
 CMailBox::CMailBox()
+    :m_Folders() // Create an empty vector
 {
-
+    CFolder folder("inbox");
+    this->m_Folders.push_back(folder);
 }
 
 // Delivery (mail)
