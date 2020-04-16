@@ -1,3 +1,4 @@
+
 #ifndef __PROGTEST__
 #include <cstring>
 #include <cstdlib>
@@ -49,6 +50,7 @@ class CTimeStamp
     int m_Sec;
 };
 
+// constructor
 CTimeStamp::CTimeStamp(int year, int month, int day, int hour,
 					   int minute, int sec)
 {
@@ -338,7 +340,7 @@ CMailBox::CMailBox()
 // or false (failure, however, delivery shall not fail).
 bool CMailBox::Delivery(const CMail &mail)
 {
-
+	return true;
 }
 
 // NewFolder (name)
@@ -349,7 +351,7 @@ bool CMailBox::Delivery(const CMail &mail)
 // 		There are no restrictions on folder names.
 bool CMailBox::NewFolder(const string &folderName)
 {
-
+	return true;
 }
 
 // MoveMail (fromFld, toFld)
@@ -502,4 +504,8 @@ int main ( void )
 }
 
 #endif /* __PROGTEST__ */
+
+
+
+
 
