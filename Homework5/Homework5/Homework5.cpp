@@ -111,12 +111,9 @@ public:
     ~CMailBody();
     CMailBody& operator = (const CMailBody& orig);
 
-    friend ostream& operator << (ostream& os, const CMailBody& x)
-    {
-        return os << "mail body: " << x.m_Size << " B";
-    }
+    friend ostream& operator << (ostream& os, const CMailBody& x);
 private:
-    int            m_Size;
+    int   m_Size;
     char* m_Data;
 };
 
@@ -152,7 +149,10 @@ CMailBody& CMailBody::operator = (const CMailBody& orig)
     return *this;
 }
 
-
+ostream& operator << (ostream& os, const CMailBody& x)
+{
+    return os << "mail body: " << x.m_Size << " B";
+}
 
 //=================================================================================================
 // CAttach
@@ -225,7 +225,6 @@ CAttach::CAttach(const CAttach& x)
     this->m_X = 1;
 }
 
-
 CAttach& CAttach::operator =(const CAttach& x)
 {
     this->m_RefCnt = x.m_RefCnt;
@@ -242,17 +241,15 @@ CAttach& CAttach::operator =(const CAttach& x)
 class CMail
 {
 public:
-    CMail(const CTimeStamp& timeStamp,
-        const string& from,
-        const CMailBody& body,
-        const CAttach* attach);
-    const string& From(void) const;
-    const CMailBody& Body(void) const;
-    const CTimeStamp& TimeStamp(void) const;
-    const CAttach* Attachment(void) const;
+    CMail(const CTimeStamp& timeStamp, const string& from,
+          const CMailBody& body, const CAttach* attach);
+    
+    const string& From(void) const { return this->m_From; }
+    const CMailBody& Body(void) const { return this->m_Body; }
+    const CTimeStamp& TimeStamp(void) const { return this->m_TimeStamp; }
+    const CAttach* Attachment(void) const { return this->m_Attach; }
 
-    friend ostream& operator <<                           (ostream& os,
-        const CMail& x);
+    friend ostream& operator << (ostream& os, const CMail& x);
 private:
     CTimeStamp m_TimeStamp;
     string m_From;
@@ -264,7 +261,7 @@ private:
 // creates an instance of e-mail based on the parameters.
 // Parameter attach may be NULL indicating an e-mail without an attachment,
 CMail::CMail(const CTimeStamp& timeStamp, const string& from,
-    const CMailBody& body, const CAttach* attach)
+             const CMailBody& body, const CAttach* attach)
     :m_TimeStamp(timeStamp), m_From(from), m_Body(body)
 {
     this->m_Attach = attach;
@@ -281,28 +278,6 @@ ostream& operator << (ostream& os, const CMail& x)
     os << x.m_TimeStamp << " " << x.m_From << " " << x.m_Body << " " << *x.m_Attach;
     return os;
 }
-
-
-const string& CMail::From(void) const
-{
-    return this->m_From;
-}
-
-const CMailBody& CMail::Body(void) const
-{
-    return this->m_Body;
-}
-
-const CTimeStamp& CMail::TimeStamp(void) const
-{
-    return this->m_TimeStamp;
-}
-
-const CAttach* CMail::Attachment(void) const
-{
-    return this->m_Attach;
-}
-
 
 class CFolder
 {
@@ -366,8 +341,6 @@ void CFolder::fillAddr(set<string>& list, const CTimeStamp& from, const CTimeSta
 // CMailBox
 // This class represents one mail box.
 // The mail box holds incoming mail (i.e. instances of CMail), the e-mails can be organized into folders.
-// The CMailBox class is to be developed by you.
-
 class CMailBox
 {
 public:
@@ -486,7 +459,7 @@ list<CMail> CMailBox::ListMail(const string& folderName,
 // The method shall search all folders.
 // If no mail fits the time interval, the returned set will be empty.
 set<string> CMailBox::ListAddr(const CTimeStamp& from,
-    const CTimeStamp& to) const
+                               const CTimeStamp& to) const
 {
     set<string> list;
     vector<CFolder>::const_iterator fp; // this is CFolder*
