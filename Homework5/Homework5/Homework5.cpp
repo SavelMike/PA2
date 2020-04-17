@@ -315,7 +315,8 @@ public:
     CFolder(const string& foldername)
         :m_Foldername(foldername), m_Mails() { }
     bool addMail(const CMail& mail);
-    bool  operator ==(const CFolder& fol);
+    bool operator ==(const CFolder& fol);
+    bool move(CFolder& to);
 private:
     vector<CMail> m_Mails;
     string m_Foldername;
@@ -329,6 +330,18 @@ bool CFolder::operator ==(const CFolder& fol)
 bool CFolder::addMail(const CMail& mail)
 {
     this->m_Mails.push_back(mail);
+    return true;
+}
+
+// Copy mails from this->m_Mails to to.m_Mails
+bool CFolder::move(CFolder& to)
+{ 
+    vector<CMail>::const_iterator mail;
+    for (mail = this->m_Mails.begin(); mail != this->m_Mails.end(); mail++) {
+        to.addMail(*mail);
+    }
+    this->m_Mails.clear();
+
     return true;
 }
 
@@ -402,9 +415,30 @@ bool CMailBox::NewFolder(const string& folderName)
 // The method moves all e-mails from folder fromFld into folder toFld.
 // The e-mails are moved, i.e. fromFld will be empty after a successful completion.
 // The method returns true (success), or false (failure, from/to folder does not exist).
-bool CMailBox::MoveMail(const string& fromFolder,
-    const string& toFolder)
+bool CMailBox::MoveMail(const string& fromFolder, const string& toFolder)
 {
+    if (fromFolder == toFolder) {
+        return false;
+    }
+    // 1. Find folder fromFolder
+    vector<CFolder>::iterator from;
+    CFolder folder(fromFolder);
+    from = find(this->m_Folders.begin(), this->m_Folders.end(), folder);
+    if (from == this->m_Folders.end()) {
+        return false;
+    }
+    
+    // 2. Find folder toFolder
+    vector<CFolder>::iterator to;
+    folder = CFolder(toFolder);
+    to = find(this->m_Folders.begin(), this->m_Folders.end(), folder);
+    if (to == this->m_Folders.end()) {
+        return false;
+    }
+   
+    // 3. Move mails
+    from->move(*to);
+    
     return true;
 }
 
