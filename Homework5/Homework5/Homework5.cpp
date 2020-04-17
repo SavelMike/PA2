@@ -315,10 +315,16 @@ public:
     CFolder(const string& foldername)
         :m_Foldername(foldername), m_Mails() { }
     bool addMail(const CMail& mail);
+    bool  operator ==(const CFolder& fol);
 private:
     vector<CMail> m_Mails;
     string m_Foldername;
 };
+
+bool CFolder::operator ==(const CFolder& fol)
+{
+    return this->m_Foldername == fol.m_Foldername;
+}
 
 bool CFolder::addMail(const CMail& mail)
 {
@@ -377,7 +383,19 @@ bool CMailBox::Delivery(const CMail& mail)
 // 		There are no restrictions on folder names.
 bool CMailBox::NewFolder(const string& folderName)
 {
-    return true;
+    vector<CFolder>::const_iterator it;
+    CFolder folder(folderName);
+    
+    // Check that folder with foldername doesn't exist yet
+    it = find(this->m_Folders.begin(), this->m_Folders.end(), folder);
+    if (it == this->m_Folders.end()) {
+        // Folder of this name does not exist
+        this->m_Folders.push_back(folder);
+        return true;
+    } else {
+        // This folder already exists
+        return false;
+    }
 }
 
 // MoveMail (fromFld, toFld)
