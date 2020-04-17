@@ -318,6 +318,7 @@ public:
     bool operator ==(const CFolder& fol) const;
     bool move(CFolder& to);
     void fillList(list<CMail>& list, const CTimeStamp& from, const CTimeStamp& to) const;
+    void fillAddr(set<string>& list, const CTimeStamp& from, const CTimeStamp& to) const;
 private:
     vector<CMail> m_Mails;
     string m_Foldername;
@@ -352,6 +353,16 @@ void CFolder::fillList(list<CMail>& list, const CTimeStamp& from, const CTimeSta
     for (mail = this->m_Mails.begin(); mail != this->m_Mails.end(); mail++) {
         if (mail->TimeStamp().Compare(from) >= 0 && mail->TimeStamp().Compare(to) <= 0) {
             list.push_back(*mail);
+        }
+    }
+}
+
+void CFolder::fillAddr(set<string>& list, const CTimeStamp& from, const CTimeStamp& to) const
+{
+    vector<CMail>::const_iterator mail;
+    for (mail = this->m_Mails.begin(); mail != this->m_Mails.end(); mail++) {
+        if (mail->TimeStamp().Compare(from) >= 0 && mail->TimeStamp().Compare(to) <= 0) {
+            list.insert(mail->From());
         }
     }
 }
@@ -483,7 +494,10 @@ set<string> CMailBox::ListAddr(const CTimeStamp& from,
     const CTimeStamp& to) const
 {
     set<string> list;
-
+    vector<CFolder>::const_iterator fp; // this is CFolder*
+    for (fp = this->m_Folders.begin(); fp != this->m_Folders.end(); fp++) {
+        fp->fillAddr(list, from, to);  
+    }
     return list;
 }
 
