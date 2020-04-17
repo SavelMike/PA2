@@ -31,15 +31,10 @@ using namespace std;
 class CTimeStamp
 {
 public:
-    CTimeStamp(int               year,
-        int               month,
-        int               day,
-        int               hour,
-        int               minute,
-        int               sec);
-    int            Compare(const CTimeStamp& x) const;
-    friend ostream& operator <<                           (ostream& os,
-        const CTimeStamp& x);
+    CTimeStamp(int year, int month,  int day,
+               int hour, int minute, int sec);
+    int Compare(const CTimeStamp& x) const;
+    friend ostream& operator << (ostream& os, const CTimeStamp& x);
 private:
     int m_Year;
     int m_Month;
@@ -50,8 +45,8 @@ private:
 };
 
 // constructor CTimeStamp class
-CTimeStamp::CTimeStamp(int year, int month, int day, int hour,
-    int minute, int sec)
+CTimeStamp::CTimeStamp(int year, int month, int day, 
+                       int hour, int minute,int sec)
 {
     this->m_Year = year;
     this->m_Month = month;
@@ -96,7 +91,7 @@ int CTimeStamp::Compare(const CTimeStamp& x) const
 ostream& operator << (ostream& os, const CTimeStamp& x)
 {
     os << setw(4) << setfill('0') << x.m_Year << "-" << setw(2) << x.m_Month << "-" << x.m_Day << " "
-        << x.m_Hour << ":" << x.m_Minute << ":" << x.m_Sec;
+       << x.m_Hour << ":" << x.m_Minute << ":" << x.m_Sec;
     return os;
 }
 
