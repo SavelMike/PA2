@@ -315,14 +315,15 @@ public:
     CFolder(const string& foldername)
         :m_Foldername(foldername), m_Mails() { }
     bool addMail(const CMail& mail);
-    bool operator ==(const CFolder& fol);
+    bool operator ==(const CFolder& fol) const;
     bool move(CFolder& to);
+    void fillList(list<CMail>& list, const CTimeStamp& from, const CTimeStamp& to) const;
 private:
     vector<CMail> m_Mails;
     string m_Foldername;
 };
 
-bool CFolder::operator ==(const CFolder& fol)
+bool CFolder::operator ==(const CFolder& fol) const
 {
     return this->m_Foldername == fol.m_Foldername;
 }
@@ -343,6 +344,16 @@ bool CFolder::move(CFolder& to)
     this->m_Mails.clear();
 
     return true;
+}
+
+void CFolder::fillList(list<CMail>& list, const CTimeStamp& from, const CTimeStamp& to) const
+{
+    vector<CMail>::const_iterator mail; // this is CMail *
+    for (mail = this->m_Mails.begin(); mail != this->m_Mails.end(); mail++) {
+        if (mail->TimeStamp().Compare(from) >= 0 && mail->TimeStamp().Compare(to) <= 0) {
+            list.push_back(*mail);
+        }
+    }
 }
 
 //=================================================================================================
@@ -447,10 +458,20 @@ bool CMailBox::MoveMail(const string& fromFolder, const string& toFolder)
 // the e-mails will be returned if the e-mail time stamp fits the time interval (from - to, both inclusive).
 // If the folder does not exist, the method returns an empty list.
 list<CMail> CMailBox::ListMail(const string& folderName,
-    const CTimeStamp& from, const CTimeStamp& to) const
+                               const CTimeStamp& from, const CTimeStamp& to) const
 {
-    list<CMail> foolist;
-    return foolist;
+    list<CMail> list;
+
+    // Find the folder
+    vector<CFolder>::const_iterator fp; // This is like CFolder *
+    CFolder folder(folderName);
+    fp = find(this->m_Folders.begin(), this->m_Folders.end(), folder);
+    if (fp == this->m_Folders.end()) {
+        return list;
+    }
+    // Call CFolder::fillList to select suitable mails
+    fp->fillList(list, from, to);
+    return list;
 }
 
 // ListAddr (from, to)
