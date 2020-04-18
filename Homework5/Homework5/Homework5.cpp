@@ -345,7 +345,7 @@ public:
     void fillAddr(set<string>& list, const CTimeStamp& from, const CTimeStamp& to) const;
 private:
     string m_Foldername;
-    vector<CMail> m_Mails;
+    multiset<CMail> m_Mails;
 };
 
 bool CFolder::operator ==(const CFolder& fol) const
@@ -355,15 +355,14 @@ bool CFolder::operator ==(const CFolder& fol) const
 
 bool CFolder::addMail(const CMail& mail)
 {
-    this->m_Mails.push_back(mail);
-    sort(this->m_Mails.begin(), this->m_Mails.end());
+    this->m_Mails.insert(mail);
     return true;
 }
 
 // Copy mails from this->m_Mails to to.m_Mails
 bool CFolder::move(CFolder& to)
 { 
-    vector<CMail>::const_iterator mail;
+    multiset<CMail>::const_iterator mail;
     for (mail = this->m_Mails.begin(); mail != this->m_Mails.end(); mail++) {
         to.addMail(*mail);
     }
@@ -374,7 +373,7 @@ bool CFolder::move(CFolder& to)
 
 void CFolder::fillList(list<CMail>& list, const CTimeStamp& from, const CTimeStamp& to) const
 {
-    vector<CMail>::const_iterator mail; // this is CMail *
+    multiset<CMail>::const_iterator mail; // this is CMail *
     for (mail = this->m_Mails.begin(); mail != this->m_Mails.end(); mail++) {
         if (mail->TimeStamp().Compare(from) >= 0 && mail->TimeStamp().Compare(to) <= 0) {
             list.push_back(*mail);
@@ -384,7 +383,7 @@ void CFolder::fillList(list<CMail>& list, const CTimeStamp& from, const CTimeSta
 
 void CFolder::fillAddr(set<string>& list, const CTimeStamp& from, const CTimeStamp& to) const
 {
-    vector<CMail>::const_iterator mail;
+    multiset<CMail>::const_iterator mail;
     for (mail = this->m_Mails.begin(); mail != this->m_Mails.end(); mail++) {
         if (mail->TimeStamp().Compare(from) >= 0 && mail->TimeStamp().Compare(to) <= 0) {
             list.insert(mail->From());
