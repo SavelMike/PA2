@@ -344,8 +344,8 @@ public:
     void fillList(list<CMail>& list, const CTimeStamp& from, const CTimeStamp& to) const;
     void fillAddr(set<string>& list, const CTimeStamp& from, const CTimeStamp& to) const;
 private:
-    vector<CMail> m_Mails;
     string m_Foldername;
+    vector<CMail> m_Mails;
 };
 
 bool CFolder::operator ==(const CFolder& fol) const
