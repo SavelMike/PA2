@@ -170,7 +170,7 @@ public:
         : m_X(x),
         m_RefCnt(1)
     {
-
+        
     }
     // AddRef
     // This method increases the number of references.
@@ -211,7 +211,11 @@ private:
     friend ostream& operator <<                           (ostream& os,
         const CAttach& x)
     {
-        return os << "attachment: " << x.m_X << " B";
+        if (x.m_X != -1) {
+            return os << "attachment: " << x.m_X << " B";
+        } else {
+            return os;
+        }
     }
 };
 
@@ -248,6 +252,7 @@ public:
     const CMailBody& Body(void) const { return this->m_Body; }
     const CTimeStamp& TimeStamp(void) const { return this->m_TimeStamp; }
     const CAttach* Attachment(void) const { return this->m_Attach; }
+    bool operator < (const CMail& mail) const;
 
     friend ostream& operator << (ostream& os, const CMail& x);
 private:
@@ -267,6 +272,12 @@ CMail::CMail(const CTimeStamp& timeStamp, const string& from,
     this->m_Attach = attach;
 }
 
+bool CMail::operator<(const CMail& mail) const
+{
+    int res = this->m_TimeStamp.Compare(mail.m_TimeStamp);
+    return res < 0;
+}
+
 // output operator
 // displays the time stamp, sender, mail body and (optionally) the attachment.
 // The objects representing individual fields do support output operators,
@@ -275,7 +286,10 @@ CMail::CMail(const CTimeStamp& timeStamp, const string& from,
 // Indeed, the operator is not tested in the testing environment, the purpose of the operator is to simplify testing.
 ostream& operator << (ostream& os, const CMail& x)
 {
-    os << x.m_TimeStamp << " " << x.m_From << " " << x.m_Body << " " << *x.m_Attach;
+    os << x.m_TimeStamp << " " << x.m_From << " " << x.m_Body;
+    if (x.m_Attach != NULL) {
+        os << " + " << *x.m_Attach;
+    }
     return os;
 }
 
@@ -302,6 +316,7 @@ bool CFolder::operator ==(const CFolder& fol) const
 bool CFolder::addMail(const CMail& mail)
 {
     this->m_Mails.push_back(mail);
+    sort(this->m_Mails.begin(), this->m_Mails.end());
     return true;
 }
 
@@ -501,6 +516,7 @@ int main(void)
     att = new CAttach(97);
     assert(m0.Delivery(CMail(CTimeStamp(2014, 3, 31, 16, 12, 48), "boss1@fit.cvut.cz", CMailBody(24, "even more urgent message"), att)));
     att->Release();
+    
     assert(showMail(m0.ListMail("inbox",
         CTimeStamp(2000, 1, 1, 0, 0, 0),
         CTimeStamp(2050, 12, 31, 23, 59, 59))) == "2014-03-31 11:23:43 boss1@fit.cvut.cz mail body: 14 B + attachment: 200 B\n"
