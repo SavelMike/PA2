@@ -247,7 +247,10 @@ class CMail
 public:
     CMail(const CTimeStamp& timeStamp, const string& from,
           const CMailBody& body, const CAttach* attach);
-    
+    CMail(const CMail& mail);
+    CMail & operator =(const CMail& mail);
+    ~CMail();
+
     const string& From(void) const { return this->m_From; }
     const CMailBody& Body(void) const { return this->m_Body; }
     const CTimeStamp& TimeStamp(void) const { return this->m_TimeStamp; }
@@ -270,6 +273,43 @@ CMail::CMail(const CTimeStamp& timeStamp, const string& from,
     :m_TimeStamp(timeStamp), m_From(from), m_Body(body)
 {
     this->m_Attach = attach;
+    if (this->m_Attach) {
+        this->m_Attach->AddRef();
+    }
+}
+
+CMail::CMail(const CMail& mail)
+    :m_TimeStamp(mail.m_TimeStamp), m_From(mail.m_From), m_Body(mail.m_Body)
+{
+    this->m_Attach = mail.m_Attach;
+    if (this->m_Attach) {
+        this->m_Attach->AddRef();
+    }
+}
+
+CMail & CMail::operator=(const CMail& mail)
+{
+    if (this == &mail) {
+        return *this;
+    }
+    this->m_TimeStamp = mail.m_TimeStamp;
+    this->m_From = mail.m_From;
+    this->m_Body = mail.m_Body;
+    if (this->m_Attach) {
+        this->m_Attach->Release();
+    }
+    this->m_Attach = mail.m_Attach;
+    if (this->m_Attach) {
+        this->m_Attach->AddRef();
+    }
+    return *this;
+}
+
+CMail::~CMail() 
+{
+    if (this->m_Attach) {
+        this->m_Attach->Release();
+    }
 }
 
 bool CMail::operator<(const CMail& mail) const
