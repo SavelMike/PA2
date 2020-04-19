@@ -386,12 +386,14 @@ bool CFolder::move(CFolder& to)
 
 void CFolder::fillList(list<CMail>& list, const CTimeStamp& from, const CTimeStamp& to) const
 {
-    multiset<CMail>::const_iterator mail; // this is CMail *
+    multiset<CMail>::const_iterator startmail; // this is CMail *
     // Find first mail with TimeStamp >= from.
-    mail = lower_bound(this->m_Mails.begin(), this->m_Mails.end(), CMail(from, " ", CMailBody(2, "a"), NULL));
-    while (mail != this->m_Mails.end() && !(to < mail->TimeStamp())) {
-        list.push_back(*mail);
-        mail++;
+    startmail = lower_bound(this->m_Mails.begin(), this->m_Mails.end(), CMail(from, " ", CMailBody(2, "a"), NULL));
+    multiset<CMail>::const_iterator endmail;
+    endmail = upper_bound(this->m_Mails.begin(), this->m_Mails.end(), CMail(to, " ", CMailBody(2, "a"), NULL));
+    while (startmail != endmail) {
+        list.push_back(*startmail);
+        startmail++;
     }
 }
 
