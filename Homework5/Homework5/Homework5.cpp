@@ -562,6 +562,9 @@ int main(void)
     CAttach* att;
 
     CMailBox m0;
+   for (int i = 0; i < 1000000; i++) {
+       assert(m0.Delivery(CMail(CTimeStamp(1997, i, i, i, i, i), "user1@fit.cvut.cz", CMailBody(14, "mail content 1"), nullptr)));
+   }
     assert(m0.Delivery(CMail(CTimeStamp(2014, 3, 31, 15, 24, 13), "user1@fit.cvut.cz", CMailBody(14, "mail content 1"), nullptr)));
     assert(m0.Delivery(CMail(CTimeStamp(2014, 3, 31, 15, 26, 23), "user2@fit.cvut.cz", CMailBody(22, "some different content"), nullptr)));
     att = new CAttach(200);
