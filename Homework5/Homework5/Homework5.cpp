@@ -111,7 +111,6 @@ ostream& operator << (ostream& os, const CTimeStamp& x)
 class CMailBody
 {
 public:
-    CMailBody() :m_Size(0), m_Data(nullptr) { }
     CMailBody(int size, const char* data);
     // copy cons/op=/destructor is correctly implemented in the testing environment
     CMailBody(const CMailBody& orig); // Copy constructor
@@ -389,7 +388,7 @@ void CFolder::fillList(list<CMail>& list, const CTimeStamp& from, const CTimeSta
 {
     multiset<CMail>::const_iterator mail; // this is CMail *
     // Find first mail with TimeStamp >= from.
-    mail = lower_bound(this->m_Mails.begin(), this->m_Mails.end(), CMail(from, " ", CMailBody(), NULL));
+    mail = lower_bound(this->m_Mails.begin(), this->m_Mails.end(), CMail(from, " ", CMailBody(2, "a"), NULL));
     while (mail != this->m_Mails.end() && !(to < mail->TimeStamp())) {
         list.push_back(*mail);
         mail++;
