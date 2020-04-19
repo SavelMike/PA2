@@ -34,6 +34,7 @@ public:
     CTimeStamp(int year, int month,  int day,
                int hour, int minute, int sec);
     int Compare(const CTimeStamp& x) const;
+    bool operator <(const CTimeStamp& x) const;
     friend ostream& operator << (ostream& os, const CTimeStamp& x);
 private:
     int m_Year;
@@ -86,6 +87,11 @@ int CTimeStamp::Compare(const CTimeStamp& x) const
     return this->m_Sec - x.m_Sec;
 }
 
+bool CTimeStamp::operator<(const CTimeStamp& x) const
+{
+    return this->Compare(x) < 0;
+}
+
 // output operator
 // displays the time stamp in format YYYY-MM-DD HH24:MI:SS.
 ostream& operator << (ostream& os, const CTimeStamp& x)
@@ -105,6 +111,7 @@ ostream& operator << (ostream& os, const CTimeStamp& x)
 class CMailBody
 {
 public:
+    CMailBody() :m_Size(0), m_Data(nullptr) { }
     CMailBody(int size, const char* data);
     // copy cons/op=/destructor is correctly implemented in the testing environment
     CMailBody(const CMailBody& orig); // Copy constructor
@@ -251,12 +258,13 @@ public:
     CMail & operator =(const CMail& mail);
     ~CMail();
 
+
     const string& From(void) const { return this->m_From; }
     const CMailBody& Body(void) const { return this->m_Body; }
     const CTimeStamp& TimeStamp(void) const { return this->m_TimeStamp; }
     const CAttach* Attachment(void) const { return this->m_Attach; }
-    bool operator < (const CMail& mail) const;
-
+    bool operator <(const CMail& mail) const;
+    bool operator ==(const CMail& mail) const;
     friend ostream& operator << (ostream& os, const CMail& x);
 private:
     CTimeStamp m_TimeStamp;
@@ -318,6 +326,12 @@ bool CMail::operator<(const CMail& mail) const
     return res < 0;
 }
 
+bool CMail::operator==(const CMail& mail) const
+{
+    int res = this->m_TimeStamp.Compare(mail.m_TimeStamp);
+    return res == 0;
+}
+
 // output operator
 // displays the time stamp, sender, mail body and (optionally) the attachment.
 // The objects representing individual fields do support output operators,
@@ -374,10 +388,11 @@ bool CFolder::move(CFolder& to)
 void CFolder::fillList(list<CMail>& list, const CTimeStamp& from, const CTimeStamp& to) const
 {
     multiset<CMail>::const_iterator mail; // this is CMail *
-    for (mail = this->m_Mails.begin(); mail != this->m_Mails.end(); mail++) {
-        if (mail->TimeStamp().Compare(from) >= 0 && mail->TimeStamp().Compare(to) <= 0) {
-            list.push_back(*mail);
-        }
+    // Find first mail with TimeStamp >= from.
+    mail = lower_bound(this->m_Mails.begin(), this->m_Mails.end(), CMail(from, " ", CMailBody(), NULL));
+    while (mail != this->m_Mails.end() && !(to < mail->TimeStamp())) {
+        list.push_back(*mail);
+        mail++;
     }
 }
 
