@@ -21,52 +21,125 @@
 using namespace std;
 #endif /* __PROGTEST__ */
 
+// This is base class
 class CCell
 {
 public:
     CCell() { ; }
-private:
-
+    virtual void SetText(const char *);
+protected: // Allows access to m_Cotnent from derived class
+    vector<string> m_Content;
 };
 
-class CText;
-class CEmpty;
-class CImage;
-
-class CTable
+void CCell::SetText(const char *)
 {
-public:    
-    CTable(int rows, int colums);
-    void SetCell(int row, int col, const CCell& cell);
-  //  void SetCell(int row, int col, const CEmpty& cempty);
-  //  void SetCell(int row, int col, const CImage& cimage);
-    CCell & GetCell(int row, int col);
-    friend ostream& operator <<(ostream& os, const CTable&);
-};
+    assert(0 == 1);
+}
 
-class CText:public CCell
+class CText :public CCell
 {
 public:
     CText(const char* str, int);
+    virtual void SetText(const char*);
     static const int ALIGN_LEFT = 1;
     static const int ALIGN_RIGHT = 2;
 private:
 };
 
-class CEmpty:public CCell
+class CEmpty :public CCell
 {
-public: 
+public:
     CEmpty() { ; }
 private:
 };
 
-class CImage:public CCell
+class CImage :public CCell
 {
 public:
     CImage() { ; }
-    CImage & AddRow(const char* str);
+    CImage& AddRow(const char* str);
 private:
 };
+
+class CTable
+{
+public:    
+    CTable(int rows, int columns);
+    ~CTable();
+    void SetCell(int row, int col, const CText& cell);
+    void SetCell(int row, int col, const CImage& cell);
+    void SetCell(int row, int col, const CEmpty& cell);
+
+    CCell & GetCell(int row, int col);
+    friend ostream& operator <<(ostream& os, const CTable&);
+private:
+    CCell*** m_Table; // 2D Array of pointers to CCells
+    int m_Rows;
+    int m_Cols;
+};
+
+CTable::CTable(int rows, int columns) :m_Rows(rows), m_Cols(columns)
+{
+    this->m_Table = new CCell** [rows];
+    for (int i = 0; i < rows; i++) {
+        this->m_Table[i] = new CCell * [columns];
+        for (int j = 0; j < columns; j++) {
+            this->m_Table[i][j] = NULL;
+        }
+    }
+}
+
+CTable::~CTable()
+{
+    for (int i = 0; i < this->m_Rows; i++) {
+        delete [] this->m_Table[i];
+    }
+    delete [] this->m_Table;
+}
+
+CCell& CTable::GetCell(int row, int col)
+{
+    return *this->m_Table[row][col];
+}
+
+void CTable::SetCell(int row, int col, const CText& cell)
+{
+    this->m_Table[row][col] = new CText(cell);
+}
+
+void CTable::SetCell(int row, int col, const CImage& cell)
+{
+    this->m_Table[row][col] = new CImage(cell);
+}
+
+void CTable::SetCell(int row, int col, const CEmpty& cell)
+{
+    this->m_Table[row][col] = new CEmpty(cell);
+}
+
+ostream& operator <<(ostream& os, const CTable&)
+{
+    return os;
+}
+
+CText::CText(const char* str, int len)
+{
+    string line;
+    istringstream ss(str);
+    while (getline(ss, line)) {
+        m_Content.push_back(line);
+    }
+}
+
+void CText::SetText(const char * str)
+{
+
+}
+
+CImage& CImage::AddRow(const char* str)
+{
+    return *this;
+}
 
 #ifndef __PROGTEST__
 int main ( void )
