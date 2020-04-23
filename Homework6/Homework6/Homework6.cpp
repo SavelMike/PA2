@@ -25,9 +25,10 @@ using namespace std;
 class CCell
 {
 public:
-    CCell() { ; }
+    CCell() :m_Content() { ; }
     virtual void SetText(const char *);
-protected: // Allows access to m_Cotnent from derived class
+    virtual CCell & operator=(const CCell& orig);
+protected: // Allows access to m_Content from derived class
     vector<string> m_Content;
 };
 
@@ -36,28 +37,41 @@ void CCell::SetText(const char *)
     assert(0 == 1);
 }
 
+CCell& CCell::operator=(const CCell& orig)
+{
+    assert(0 == 1);
+    return *this;
+}
+
 class CText :public CCell
 {
 public:
+    CText() : m_Align(ALIGN_LEFT) { ; }
     CText(const char* str, int);
     virtual void SetText(const char*);
     static const int ALIGN_LEFT = 1;
     static const int ALIGN_RIGHT = 2;
+    virtual CCell& operator=(const CCell& orig);
 private:
+    int m_Align;
 };
 
 class CEmpty :public CCell
 {
 public:
     CEmpty() { ; }
+    virtual CCell& operator=(const CCell& orig) { return *this; }
+    virtual void SetText(const char*) { throw "CEmpty::SetText is not to be called"; }
 private:
 };
 
 class CImage :public CCell
 {
 public:
-    CImage() { ; }
+    CImage();
     CImage& AddRow(const char* str);
+    virtual CCell& operator=(const CCell& orig);
+    virtual void SetText(const char*) { throw "CImage::SetText is not to be called"; }
 private:
 };
 
@@ -66,9 +80,10 @@ class CTable
 public:    
     CTable(int rows, int columns);
     ~CTable();
-    void SetCell(int row, int col, const CText& cell);
-    void SetCell(int row, int col, const CImage& cell);
-    void SetCell(int row, int col, const CEmpty& cell);
+ //   void SetCell(int row, int col, const CText& cell);
+ //   void SetCell(int row, int col, const CImage& cell);
+ //   void SetCell(int row, int col, const CEmpty& cell);
+    void SetCell(int row, int col, const CCell& cell);
 
     CCell & GetCell(int row, int col);
     friend ostream& operator <<(ostream& os, const CTable&);
@@ -102,19 +117,24 @@ CCell& CTable::GetCell(int row, int col)
     return *this->m_Table[row][col];
 }
 
-void CTable::SetCell(int row, int col, const CText& cell)
+void CTable::SetCell(int row, int col, const CCell& cell)
 {
-    this->m_Table[row][col] = new CText(cell);
-}
-
-void CTable::SetCell(int row, int col, const CImage& cell)
-{
-    this->m_Table[row][col] = new CImage(cell);
-}
-
-void CTable::SetCell(int row, int col, const CEmpty& cell)
-{
-    this->m_Table[row][col] = new CEmpty(cell);
+    if (this->m_Table[row][col] != 0) {
+        delete this->m_Table[row][col];
+    }
+    if (dynamic_cast<const CEmpty*> (&cell)) {
+        // cell is CEmpty
+        this->m_Table[row][col] = new CEmpty();
+    } else if (dynamic_cast<const CText*> (&cell)) {
+        // cell is CText
+        this->m_Table[row][col] = new CText();
+    } else if (dynamic_cast<const CImage*> (&cell)) {
+        // cell is CImage
+        this->m_Table[row][col] = new CImage();
+    } else {
+        throw "Unexpected object";
+    }
+    *this->m_Table[row][col] = cell;
 }
 
 ostream& operator <<(ostream& os, const CTable&)
@@ -122,7 +142,7 @@ ostream& operator <<(ostream& os, const CTable&)
     return os;
 }
 
-CText::CText(const char* str, int len)
+CText::CText(const char* str, int align) :m_Align(align)
 {
     string line;
     istringstream ss(str);
@@ -133,13 +153,45 @@ CText::CText(const char* str, int len)
 
 void CText::SetText(const char * str)
 {
+    // Delete previous content of m_Content
+    this->m_Content.clear();
+    
+    string line;
+    istringstream ss(str);
+    while (getline(ss, line)) {
+        this->m_Content.push_back(line);
+    }
+}
 
+CCell& CText::operator=(const CCell& orig)
+{
+    const CText* p = dynamic_cast<const CText*> (&orig);
+    this->m_Content = p->m_Content;
+    this->m_Align = p->m_Align;
+
+    return *this;
+}
+
+CImage::CImage()
+{
+    
 }
 
 CImage& CImage::AddRow(const char* str)
 {
+    this->m_Content.push_back(str);
     return *this;
 }
+
+CCell& CImage::operator=(const CCell& orig)
+{
+    const CImage* p = dynamic_cast<const CImage*> (&orig);
+    this->m_Content = p->m_Content;
+
+    return *this;
+}
+
+
 
 #ifndef __PROGTEST__
 int main ( void )
