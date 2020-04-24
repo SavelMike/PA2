@@ -26,13 +26,17 @@ class CCell
 {
 public:
     CCell() :m_Content() { ; }
-    virtual void SetText(const char *);
+    virtual void SetText(const char *text);
     virtual CCell & operator=(const CCell& orig);
+    virtual void print(ostream& os) const { os << "I am CCell::print"; }
+    friend ostream& operator <<(ostream& os, const CCell& cell);
+    const vector<string>& get_content() { return this->m_Content; }
+
 protected: // Allows access to m_Content from derived class
     vector<string> m_Content;
 };
 
-void CCell::SetText(const char *)
+void CCell::SetText(const char *text)
 {
     assert(0 == 1);
 }
@@ -41,6 +45,12 @@ CCell& CCell::operator=(const CCell& orig)
 {
     assert(0 == 1);
     return *this;
+}
+
+ostream& operator <<(ostream& os, const CCell& cell)
+{
+    cell.print(os);
+    return os;
 }
 
 class CText :public CCell
@@ -52,6 +62,7 @@ public:
     static const int ALIGN_LEFT = 1;
     static const int ALIGN_RIGHT = 2;
     virtual CCell& operator=(const CCell& orig);
+    virtual void print(ostream& os) const;
 private:
     int m_Align;
 };
@@ -62,6 +73,7 @@ public:
     CEmpty() { ; }
     virtual CCell& operator=(const CCell& orig) { return *this; }
     virtual void SetText(const char*) { throw "CEmpty::SetText is not to be called"; }
+    virtual void print(ostream& os) const { ; }
 private:
 };
 
@@ -72,6 +84,7 @@ public:
     CImage& AddRow(const char* str);
     virtual CCell& operator=(const CCell& orig);
     virtual void SetText(const char*) { throw "CImage::SetText is not to be called"; }
+    virtual void print(ostream& os) const;
 private:
 };
 
@@ -107,9 +120,9 @@ CTable::CTable(int rows, int columns) :m_Rows(rows), m_Cols(columns)
 CTable::~CTable()
 {
     for (int i = 0; i < this->m_Rows; i++) {
-        delete [] this->m_Table[i];
+        delete[] this->m_Table[i];
     }
-    delete [] this->m_Table;
+    delete[] this->m_Table;
 }
 
 CCell& CTable::GetCell(int row, int col)
@@ -137,8 +150,79 @@ void CTable::SetCell(int row, int col, const CCell& cell)
     *this->m_Table[row][col] = cell;
 }
 
-ostream& operator <<(ostream& os, const CTable&)
+/* this is used by std::max_element to find the longest string */
+bool compare_strings_by_length(const string& a, const string& b)
 {
+    return a.length() < b.length();
+}
+
+// This is main function
+ostream& operator <<(ostream& os, const CTable& table)
+{
+    // Calculates height and width of cells
+    int* columnwidth = new int [table.m_Cols];
+    for (int i = 0; i < table.m_Cols; i++) {
+        columnwidth[i] = 0;
+    }
+    
+    int* rowheight = new int[table.m_Rows];
+    for (int i = 0; i < table.m_Rows; i++) {
+        rowheight[i] = 0;
+    }
+    
+    for (int i = 0; i < table.m_Rows; i++) {
+        for (int j = 0; j < table.m_Cols; j++) {
+            // Width and height of this cell
+            if (table.m_Table[i][j] == NULL) {
+                continue;
+            }
+            vector<string>::const_iterator it;
+            it = max_element(table.m_Table[i][j]->get_content().begin(), 
+                                table.m_Table[i][j]->get_content().end(), 
+                                compare_strings_by_length);
+            if (it == table.m_Table[i][j]->get_content().end()) {
+                continue;
+            }
+            int w = it->size();
+            if (w > columnwidth[j]) {
+                columnwidth[j] = w;
+            }
+            int h = table.m_Table[i][j]->get_content().size();
+            if (h > rowheight[i]) {
+                rowheight[i] = h;
+            }
+        }
+    }
+    for (int i = 0; i < table.m_Rows; i++) {
+        // Draw upper border of table
+        for (int j = 0; j < table.m_Cols; j++) {
+            os << '+' << string(columnwidth[j], '-');
+        }
+        os << '+' << endl;
+        for (int j = 0; j < rowheight[i]; j++) {
+            for (int k = 0; k < table.m_Cols; k++) {
+                os << '|' << string(columnwidth[k], ' ');
+            }
+            os << '|' << endl;
+        }
+    }
+    for (int i = 0; i < table.m_Cols; i++) {
+        os << '+' << string(columnwidth[i], '-');
+    }
+    os << '+' << endl;
+
+
+    for (int i = 0; i < table.m_Rows; i++) {
+        for (int j = 0; j < table.m_Cols; j++) {
+            if (table.m_Table[i][j] == NULL) {
+                continue;
+            }
+            os << *table.m_Table[i][j] << endl;
+        }
+    }
+    
+    delete[] columnwidth;
+    delete[] rowheight;
     return os;
 }
 
@@ -172,6 +256,15 @@ CCell& CText::operator=(const CCell& orig)
     return *this;
 }
 
+void CText::print(ostream& os) const
+{
+    vector<string>::const_iterator it;
+    for (it = this->m_Content.begin(); it != this->m_Content.end(); it++) {
+        os << *it << endl;
+    }
+}
+
+
 CImage::CImage()
 {
     
@@ -191,7 +284,13 @@ CCell& CImage::operator=(const CCell& orig)
     return *this;
 }
 
-
+void CImage::print(ostream& os) const 
+{ 
+    vector<string>::const_iterator it;
+    for (it = this->m_Content.begin(); it != this->m_Content.end(); it++) {
+        os << *it << endl;
+    }
+}
 
 #ifndef __PROGTEST__
 int main ( void )
@@ -222,6 +321,7 @@ int main ( void )
   t0 . SetCell ( 2, 1, CEmpty () );
   oss . str ("");
   oss . clear ();
+  cout << t0;
   oss << t0;
   assert ( oss . str () ==
         "+--------------------------+----------------------+\n"
