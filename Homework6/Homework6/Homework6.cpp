@@ -29,6 +29,7 @@ public:
     virtual void SetText(const char *text);
     virtual CCell & operator=(const CCell& orig);
     virtual void print(ostream& os, unsigned index, int width, int height) const { os << "I am CCell::print"; }
+	virtual ~CCell() { }
     const vector<string>& get_content() { return this->m_Content; }
 
 protected: // Allows access to m_Content from derived class
@@ -56,6 +57,8 @@ public:
     static const int ALIGN_RIGHT = 2;
     virtual CCell& operator=(const CCell& orig);
     virtual void print(ostream& os, unsigned index, int width, int height) const;
+    virtual ~CText() { }
+
 private:
     int m_Align;
 };
@@ -67,6 +70,7 @@ public:
     virtual CCell& operator=(const CCell& orig) { return *this; }
     virtual void SetText(const char*) { throw "CEmpty::SetText is not to be called"; }
     virtual void print(ostream& os, unsigned index, int width, int height) const;
+	virtual ~CEmpty() { }
 private:
 };
 
@@ -83,6 +87,7 @@ public:
     virtual CCell& operator=(const CCell& orig);
     virtual void SetText(const char*) { throw "CImage::SetText is not to be called"; }
     virtual void print(ostream& os, unsigned index, int width, int height) const;
+	virtual ~CImage() { }
 private:
 };
 
@@ -327,7 +332,7 @@ void CImage::print(ostream& os, unsigned index, int width, int height) const
 { 
     int vpad = height - this->m_Content.size();
     unsigned topvpad = vpad / 2;
-    int botvpad = vpad - topvpad;
+
     if (topvpad > index) {
         os << setw(width) << ' ';
         return;
