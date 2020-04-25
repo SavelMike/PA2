@@ -479,7 +479,6 @@ int main ( void )
   oss . str ("");
   oss . clear ();
   oss << t0;
-  cout << t0;
   assert ( oss . str () ==
         "+----------------------------------------------+------------------------------------------+\n"
         "|Hello,                                        |          ###                             |\n"
@@ -528,7 +527,6 @@ int main ( void )
   oss . str ("");
   oss . clear ();
   oss << t1;
-  cout << "Printing t1" << endl << t1;
   assert ( oss . str () ==
         "+-----------+------------------------------------------+\n"
         "|Hello,     |          ###                             |\n"
@@ -575,7 +573,6 @@ int main ( void )
   oss . str ("");
   oss . clear ();
   oss << t0;
-  cout << "Printing line 545" << endl << t0;
   assert ( oss . str () ==
         "+----------------------------------------------+------------------------------------------+\n"
         "|Hello,                                        |          ###                             |\n"
