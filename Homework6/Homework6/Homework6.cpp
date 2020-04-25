@@ -28,8 +28,7 @@ public:
     CCell() :m_Content() { ; }
     virtual void SetText(const char *text);
     virtual CCell & operator=(const CCell& orig);
-    virtual void print(ostream& os) const { os << "I am CCell::print"; }
-    friend ostream& operator <<(ostream& os, const CCell& cell);
+    virtual void print(ostream& os, unsigned index, int width, int height) const { os << "I am CCell::print"; }
     const vector<string>& get_content() { return this->m_Content; }
 
 protected: // Allows access to m_Content from derived class
@@ -47,12 +46,6 @@ CCell& CCell::operator=(const CCell& orig)
     return *this;
 }
 
-ostream& operator <<(ostream& os, const CCell& cell)
-{
-    cell.print(os);
-    return os;
-}
-
 class CText :public CCell
 {
 public:
@@ -62,7 +55,7 @@ public:
     static const int ALIGN_LEFT = 1;
     static const int ALIGN_RIGHT = 2;
     virtual CCell& operator=(const CCell& orig);
-    virtual void print(ostream& os) const;
+    virtual void print(ostream& os, unsigned index, int width, int height) const;
 private:
     int m_Align;
 };
@@ -73,9 +66,14 @@ public:
     CEmpty() { ; }
     virtual CCell& operator=(const CCell& orig) { return *this; }
     virtual void SetText(const char*) { throw "CEmpty::SetText is not to be called"; }
-    virtual void print(ostream& os) const { ; }
+    virtual void print(ostream& os, unsigned index, int width, int height) const;
 private:
 };
+
+void CEmpty::print(ostream& os, unsigned index, int width, int height) const 
+{
+    os << setw(width) << ' ';
+}
 
 class CImage :public CCell
 {
@@ -84,7 +82,7 @@ public:
     CImage& AddRow(const char* str);
     virtual CCell& operator=(const CCell& orig);
     virtual void SetText(const char*) { throw "CImage::SetText is not to be called"; }
-    virtual void print(ostream& os) const;
+    virtual void print(ostream& os, unsigned index, int width, int height) const;
 private:
 };
 
@@ -92,10 +90,10 @@ class CTable
 {
 public:    
     CTable(int rows, int columns);
+    CTable(const CTable&);
+    CTable& operator=(const CTable&);
     ~CTable();
- //   void SetCell(int row, int col, const CText& cell);
- //   void SetCell(int row, int col, const CImage& cell);
- //   void SetCell(int row, int col, const CEmpty& cell);
+
     void SetCell(int row, int col, const CCell& cell);
 
     CCell & GetCell(int row, int col);
@@ -112,14 +110,57 @@ CTable::CTable(int rows, int columns) :m_Rows(rows), m_Cols(columns)
     for (int i = 0; i < rows; i++) {
         this->m_Table[i] = new CCell * [columns];
         for (int j = 0; j < columns; j++) {
-            this->m_Table[i][j] = NULL;
+            this->m_Table[i][j] = new CEmpty;
         }
     }
+}
+
+CTable::CTable(const CTable& table) :m_Rows(table.m_Rows), m_Cols(table.m_Cols)
+{
+    this->m_Table = new CCell** [table.m_Rows];
+    for (int i = 0; i < table.m_Rows; i++) {
+        this->m_Table[i] = new CCell * [table.m_Cols];
+        for (int j = 0; j < table.m_Cols; j++) {
+            this->m_Table[i][j] = new CEmpty;
+            this->SetCell(i, j, *table.m_Table[i][j]);
+        }
+    }
+}
+
+CTable& CTable::operator=(const CTable& table)
+{
+    if (this == &table) {
+        return *this;
+    }
+
+    for (int i = 0; i < this->m_Rows; i++) {
+        for (int j = 0; j < this->m_Cols; j++) {
+            delete this->m_Table[i][j];
+        }
+        delete[] this->m_Table[i];
+    }
+    delete[] this->m_Table;
+
+    this->m_Rows = table.m_Rows;
+    this->m_Cols = table.m_Cols;
+    this->m_Table = new CCell * *[table.m_Rows];
+    for (int i = 0; i < table.m_Rows; i++) {
+        this->m_Table[i] = new CCell * [table.m_Cols];
+        for (int j = 0; j < table.m_Cols; j++) {
+            this->m_Table[i][j] = new CEmpty;
+            this->SetCell(i, j, *table.m_Table[i][j]);
+        }
+    }
+
+    return *this;
 }
 
 CTable::~CTable()
 {
     for (int i = 0; i < this->m_Rows; i++) {
+        for (int j = 0; j < this->m_Cols; j++) {
+            delete this->m_Table[i][j];
+        }
         delete[] this->m_Table[i];
     }
     delete[] this->m_Table;
@@ -201,7 +242,8 @@ ostream& operator <<(ostream& os, const CTable& table)
         os << '+' << endl;
         for (int j = 0; j < rowheight[i]; j++) {
             for (int k = 0; k < table.m_Cols; k++) {
-                os << '|' << string(columnwidth[k], ' ');
+                os << '|';
+                table.m_Table[i][k]->print(os, j, columnwidth[k], rowheight[i]);
             }
             os << '|' << endl;
         }
@@ -211,16 +253,6 @@ ostream& operator <<(ostream& os, const CTable& table)
     }
     os << '+' << endl;
 
-
-    for (int i = 0; i < table.m_Rows; i++) {
-        for (int j = 0; j < table.m_Cols; j++) {
-            if (table.m_Table[i][j] == NULL) {
-                continue;
-            }
-            os << *table.m_Table[i][j] << endl;
-        }
-    }
-    
     delete[] columnwidth;
     delete[] rowheight;
     return os;
@@ -256,11 +288,18 @@ CCell& CText::operator=(const CCell& orig)
     return *this;
 }
 
-void CText::print(ostream& os) const
+void CText::print(ostream& os, unsigned index, int width, int height) const
 {
-    vector<string>::const_iterator it;
-    for (it = this->m_Content.begin(); it != this->m_Content.end(); it++) {
-        os << *it << endl;
+    if (this->m_Content.size() <= index) {
+        os << setw(width) << ' ';
+    }
+    else {
+        if (this->m_Align == ALIGN_LEFT) {
+            os << left << setw(width) << this->m_Content[index];
+        }
+        else {
+            os << right << setw(width) << this->m_Content[index];
+        }
     }
 }
 
@@ -284,11 +323,24 @@ CCell& CImage::operator=(const CCell& orig)
     return *this;
 }
 
-void CImage::print(ostream& os) const 
+void CImage::print(ostream& os, unsigned index, int width, int height) const 
 { 
-    vector<string>::const_iterator it;
-    for (it = this->m_Content.begin(); it != this->m_Content.end(); it++) {
-        os << *it << endl;
+    int vpad = height - this->m_Content.size();
+    unsigned topvpad = vpad / 2;
+    int botvpad = vpad - topvpad;
+    if (topvpad > index) {
+        os << setw(width) << ' ';
+        return;
+    }
+    index -= topvpad;
+    if (this->m_Content.size() <= index) {
+        os << setw(width) << ' ';
+    }
+    else {
+        int pad = width - this->m_Content[index].size();
+        int lpad = pad / 2;
+        int rpad = pad - lpad;
+        os << string(lpad, ' ') << this->m_Content[index] << string(rpad, ' ');
     }
 }
 
@@ -321,7 +373,6 @@ int main ( void )
   t0 . SetCell ( 2, 1, CEmpty () );
   oss . str ("");
   oss . clear ();
-  cout << t0;
   oss << t0;
   assert ( oss . str () ==
         "+--------------------------+----------------------+\n"
@@ -428,6 +479,7 @@ int main ( void )
   oss . str ("");
   oss . clear ();
   oss << t0;
+  cout << t0;
   assert ( oss . str () ==
         "+----------------------------------------------+------------------------------------------+\n"
         "|Hello,                                        |          ###                             |\n"
@@ -476,6 +528,7 @@ int main ( void )
   oss . str ("");
   oss . clear ();
   oss << t1;
+  cout << "Printing t1" << endl << t1;
   assert ( oss . str () ==
         "+-----------+------------------------------------------+\n"
         "|Hello,     |          ###                             |\n"
@@ -522,6 +575,7 @@ int main ( void )
   oss . str ("");
   oss . clear ();
   oss << t0;
+  cout << "Printing line 545" << endl << t0;
   assert ( oss . str () ==
         "+----------------------------------------------+------------------------------------------+\n"
         "|Hello,                                        |          ###                             |\n"
