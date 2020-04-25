@@ -138,6 +138,7 @@ CTable& CTable::operator=(const CTable& table)
         return *this;
     }
 
+
     for (int i = 0; i < this->m_Rows; i++) {
         for (int j = 0; j < this->m_Cols; j++) {
             delete this->m_Table[i][j];
