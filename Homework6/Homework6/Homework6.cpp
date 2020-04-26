@@ -126,6 +126,8 @@ public:
 
     CCell & GetCell(int row, int col);
     friend ostream& operator <<(ostream& os, const CTable&);
+    int getRow() { return this->m_Rows; }
+    int getCol() { return this->m_Cols; }
 private:
     CCell*** m_Table; // 2D Array of pointers to CCells
     int m_Rows;
@@ -201,9 +203,11 @@ CCell& CTable::GetCell(int row, int col)
 
 void CTable::SetCell(int row, int col, const CCell& cell)
 {
-    if (this->m_Table[row][col] != 0) {
-        delete this->m_Table[row][col];
+    if (this->m_Table[row][col] == &cell) {
+        return;
     }
+    delete this->m_Table[row][col];
+    
     if (dynamic_cast<const CEmpty*> (&cell)) {
         // cell is CEmpty
         this->m_Table[row][col] = new CEmpty();
@@ -388,9 +392,82 @@ void CImage::print(ostream& os, unsigned index, int width, int height) const
 }
 
 #ifndef __PROGTEST__
+
+#define CImagemaxwidth 10
+#define CImagemaxheight 10
+#define CTextmaxwidth 10
+#define CTextmaxheight 10
+#define CTablemaxrow 10
+#define CTablemaxcol 10
+#define OpsetCEmpty 0
+#define OpsetCText 1
+#define OpsetCImage 2
+#define OpgetCellsetCell 3
+#define Maxops 4
+
+void test(void)
+{
+    CTable table((rand() % CTablemaxrow) + 1, (rand() % CTablemaxcol) + 1);
+    for (int i = 0; i < 100000; i++) {
+        if (i != 0 && (i % 10) == 0) {
+            cout << table;
+            cout << "@@@@@@@@@@@@@ " << i <<  endl;
+        }
+        if (i != 0 && (i % 1000) == 0) {
+            CTable table2((rand() % CTablemaxrow) + 1, (rand() % CTablemaxcol) + 1);
+            table = table2;
+            continue;
+        }
+        int row = rand() % table.getRow();
+        int col = rand() % table.getCol();
+        int type = rand() % Maxops;
+        if (type == OpsetCEmpty) {
+            table.SetCell(row, col, CEmpty());
+        }
+        else if (type == OpsetCImage) {
+            int w = (rand() % CImagemaxwidth) + 1;
+            int h = (rand() % CImagemaxheight) + 1;
+            string str(w, '#');
+            CImage ci;
+            for (int j = 0; j < h; j++) {
+                ci.AddRow(str.c_str());
+            }
+            table.SetCell(row, col, ci);
+        }
+        else if (type == OpsetCText) {
+            int mw = (rand() % CTextmaxwidth) + 1;
+            int h = (rand() % CTextmaxheight) + 1;
+            string str;
+            for (int j = 0; j < h; j++) {
+                str += string(rand() % mw, 'a');
+                str += "\n";
+            }
+            table.SetCell(row, col, CText(str.c_str(), (rand() % 2) + 1));
+        }
+        else if (type == OpgetCellsetCell) {
+            int r = rand() % table.getRow();
+            int c = rand() % table.getCol();
+            table.SetCell(r, c, table.GetCell(row, col));
+        }
+    }    
+}
+
 int main ( void )
-{ 
-  ostringstream oss;
+{
+    // 1. From CEmpty to CImage and then to CText
+    CTable table(10, 10);
+    table.SetCell(1, 1, CImage().AddRow("1234567890").AddRow("9876543210").AddRow("abcdefghij"));
+    table.SetCell(1, 1, CImage().AddRow("1234567890xx").AddRow("9876543210xx").AddRow("abcdefghijxx"));
+    table.SetCell(1, 1, CText("a\nb\nc\ncc", CText::ALIGN_LEFT));
+    table.SetCell(1, 1, CText("ab\nbc\nc\nccd", CText::ALIGN_LEFT));
+    table.SetCell(1, 1, CEmpty());
+    table.SetCell(1, 1, CEmpty());
+    table.SetCell(1, 1, CText("a\nb\nc\ncc", CText::ALIGN_LEFT));
+    table.SetCell(1, 1, CImage().AddRow("1234567890xx").AddRow("9876543210xx").AddRow("abcdefghijxx"));
+    cout << table;
+    test();
+    
+    ostringstream oss;
   CTable t0 ( 3, 2 );
   t0 . SetCell ( 0, 0, CText ( "Hello,\n"
         "Hello Kitty", CText::ALIGN_LEFT ) );
