@@ -25,17 +25,17 @@ using namespace std;
 class CCell
 {
 public:
-    CCell() :m_Content() { ; }
+    CCell() { ; }
     // Copy constructor
     CCell(const CCell& orig);
     virtual CCell& operator=(const CCell& orig);
     virtual ~CCell() { }
     virtual void SetText(const char *text);
     virtual void print(ostream& os, unsigned index, int width, int height) const { os << "I am CCell::print"; }
-    const vector<string>& get_content() { return this->m_Content; }
+    virtual int getHeight() { return 0; }
+    virtual int getWidth() { return 0; }
 
-protected: // Allows access to m_Content from derived class
-    vector<string> m_Content;
+protected:
 };
 
 void CCell::SetText(const char *text)
@@ -57,19 +57,23 @@ CCell& CCell::operator=(const CCell& orig)
 class CText :public CCell
 {
 public:
-    CText() : m_Align(ALIGN_LEFT) { ; }
+    CText() : m_Align(ALIGN_LEFT), m_Text(), m_Maxwidth(0) { ; }
     CText(const char* str, int);
     CText(const CText& orig);
     virtual CCell& operator=(const CCell& orig);
     virtual ~CText() { ; }
     virtual void print(ostream& os, unsigned index, int width, int height) const;
     virtual void SetText(const char*);
+    virtual int getHeight() { return this->m_Text.size(); }
+    virtual int getWidth() { return this->m_Maxwidth; }
 
     static const int ALIGN_LEFT = 1;
     static const int ALIGN_RIGHT = 2;
  
 private:
     int m_Align;
+    vector<string> m_Text;
+    int m_Maxwidth;
 };
 
 class CEmpty :public CCell
@@ -81,6 +85,8 @@ public:
     virtual ~CEmpty() { }
     virtual void SetText(const char*) { throw "CEmpty::SetText is not to be called"; }
     virtual void print(ostream& os, unsigned index, int width, int height) const;
+    virtual int getHeight() { return 0; }
+    virtual int getWidth() { return 0; }
 private:
 };
 
@@ -96,10 +102,14 @@ public:
     CImage& AddRow(const char* str);
     CImage(const CImage& orig);
     virtual CCell& operator=(const CCell& orig);
+    virtual ~CImage() { ; }
     virtual void SetText(const char*) { throw "CImage::SetText is not to be called"; }
     virtual void print(ostream& os, unsigned index, int width, int height) const;
-    virtual ~CImage() { ; }
+    virtual int getHeight() { return this->m_Image.size(); }
+    virtual int getWidth() { return this->m_Maxwidth; }
 private:
+    vector<string> m_Image;
+    int m_Maxwidth;
 };
 
 class CTable
@@ -207,12 +217,6 @@ void CTable::SetCell(int row, int col, const CCell& cell)
     *this->m_Table[row][col] = cell;
 }
 
-/* this is used by std::max_element to find the longest string */
-bool compare_strings_by_length(const string& a, const string& b)
-{
-    return a.length() < b.length();
-}
-
 // This is main function
 ostream& operator <<(ostream& os, const CTable& table)
 {
@@ -229,22 +233,11 @@ ostream& operator <<(ostream& os, const CTable& table)
     
     for (int i = 0; i < table.m_Rows; i++) {
         for (int j = 0; j < table.m_Cols; j++) {
-            // Width and height of this cell
-            if (table.m_Table[i][j] == NULL) {
-                continue;
-            }
-            vector<string>::const_iterator it;
-            it = max_element(table.m_Table[i][j]->get_content().begin(), 
-                                table.m_Table[i][j]->get_content().end(), 
-                                compare_strings_by_length);
-            if (it == table.m_Table[i][j]->get_content().end()) {
-                continue;
-            }
-            int w = it->size();
+            int w = table.m_Table[i][j]->getWidth();
             if (w > columnwidth[j]) {
                 columnwidth[j] = w;
             }
-            int h = table.m_Table[i][j]->get_content().size();
+            int h = table.m_Table[i][j]->getHeight();
             if (h > rowheight[i]) {
                 rowheight[i] = h;
             }
@@ -277,69 +270,85 @@ ostream& operator <<(ostream& os, const CTable& table)
 CText::CText(const CText& orig)
 {
     this->m_Align = orig.m_Align;
-    this->m_Content = orig.m_Content;
+    this->m_Text = orig.m_Text;
+    this->m_Maxwidth = orig.m_Maxwidth;
 }
 
-CText::CText(const char* str, int align) :m_Align(align)
+CText::CText(const char* str, int align) :m_Align(align), m_Text(), m_Maxwidth(0)
 {
     string line;
     istringstream ss(str);
     while (getline(ss, line)) {
-        m_Content.push_back(line);
+        m_Text.push_back(line);
+        if (line.size() > (unsigned)(this->m_Maxwidth)) {
+            this->m_Maxwidth = line.size();
+        }
     }
 }
 
-void CText::SetText(const char * str)
+void CText::SetText(const char* str)
 {
-    // Delete previous content of m_Content
-    this->m_Content.clear();
+    // Delete previous content of m_Text
+    this->m_Text.clear();
     
     string line;
     istringstream ss(str);
+    
+    this->m_Maxwidth = 0;
     while (getline(ss, line)) {
-        this->m_Content.push_back(line);
+        this->m_Text.push_back(line);
+        if (line.size() > (unsigned)(this->m_Maxwidth)) {
+            this->m_Maxwidth = line.size();
+        }
     }
 }
 
 CCell& CText::operator=(const CCell& orig)
 {
+    if (this == &orig) {
+        return *this;
+    }
+    this->m_Text.clear();
     const CText* p = dynamic_cast<const CText*> (&orig);
-    this->m_Content = p->m_Content;
+    this->m_Text = p->m_Text;
     this->m_Align = p->m_Align;
+    this->m_Maxwidth = p->m_Maxwidth;
 
     return *this;
 }
 
 void CText::print(ostream& os, unsigned index, int width, int height) const
 {
-    if (this->m_Content.size() <= index) {
+    if (this->m_Text.size() <= index) {
         os << setw(width) << ' ';
     }
     else {
         if (this->m_Align == ALIGN_LEFT) {
-            os << left << setw(width) << this->m_Content[index];
+            os << left << setw(width) << this->m_Text[index];
         }
         else {
-            os << right << setw(width) << this->m_Content[index];
+            os << right << setw(width) << this->m_Text[index];
         }
     }
 }
 
 
-CImage::CImage()
+CImage::CImage() :m_Maxwidth(0)
 {
     
 }
 
 CImage& CImage::AddRow(const char* str)
 {
-    this->m_Content.push_back(str);
+    this->m_Image.push_back(str);
+    this->m_Maxwidth = strlen(str);
     return *this;
 }
 
 CImage::CImage(const CImage& orig)
 {
-    this->m_Content = orig.m_Content;
+    this->m_Image = orig.m_Image;
+    this->m_Maxwidth = orig.m_Maxwidth;
 }
 
 CCell& CImage::operator=(const CCell& orig)
@@ -347,15 +356,17 @@ CCell& CImage::operator=(const CCell& orig)
     if (this == &orig) {
         return *this;
     }
+    this->m_Image.clear();
     const CImage* p = dynamic_cast<const CImage*> (&orig);
-    this->m_Content = p->m_Content;
+    this->m_Image = p->m_Image;
+    this->m_Maxwidth = p->m_Maxwidth;
 
     return *this;
 }
 
 void CImage::print(ostream& os, unsigned index, int width, int height) const 
 { 
-    int vpad = height - this->m_Content.size();
+    int vpad = height - this->m_Image.size();
     unsigned topvpad = vpad / 2;
 
     if (topvpad > index) {
@@ -363,14 +374,14 @@ void CImage::print(ostream& os, unsigned index, int width, int height) const
         return;
     }
     index -= topvpad;
-    if (this->m_Content.size() <= index) {
+    if (this->m_Image.size() <= index) {
         os << setw(width) << ' ';
     }
     else {
-        int pad = width - this->m_Content[index].size();
+        int pad = width - this->m_Image[index].size();
         int lpad = pad / 2;
         int rpad = pad - lpad;
-        os << string(lpad, ' ') << this->m_Content[index] << string(rpad, ' ');
+        os << string(lpad, ' ') << this->m_Image[index] << string(rpad, ' ');
     }
 }
 
