@@ -26,10 +26,12 @@ class CCell
 {
 public:
     CCell() :m_Content() { ; }
+    // Copy constructor
+    CCell(const CCell& orig);
+    virtual CCell& operator=(const CCell& orig);
+    virtual ~CCell() { }
     virtual void SetText(const char *text);
-    virtual CCell & operator=(const CCell& orig);
     virtual void print(ostream& os, unsigned index, int width, int height) const { os << "I am CCell::print"; }
-	virtual ~CCell() { }
     const vector<string>& get_content() { return this->m_Content; }
 
 protected: // Allows access to m_Content from derived class
@@ -37,6 +39,11 @@ protected: // Allows access to m_Content from derived class
 };
 
 void CCell::SetText(const char *text)
+{
+    assert(0 == 1);
+}
+
+CCell::CCell(const CCell& orig)
 {
     assert(0 == 1);
 }
@@ -52,13 +59,15 @@ class CText :public CCell
 public:
     CText() : m_Align(ALIGN_LEFT) { ; }
     CText(const char* str, int);
+    CText(const CText& orig);
+    virtual CCell& operator=(const CCell& orig);
+    virtual ~CText() { ; }
+    virtual void print(ostream& os, unsigned index, int width, int height) const;
     virtual void SetText(const char*);
+
     static const int ALIGN_LEFT = 1;
     static const int ALIGN_RIGHT = 2;
-    virtual CCell& operator=(const CCell& orig);
-    virtual void print(ostream& os, unsigned index, int width, int height) const;
-    virtual ~CText() { }
-
+ 
 private:
     int m_Align;
 };
@@ -67,10 +76,11 @@ class CEmpty :public CCell
 {
 public:
     CEmpty() { ; }
+    CEmpty(const CEmpty& orig);
     virtual CCell& operator=(const CCell& orig) { return *this; }
+    virtual ~CEmpty() { }
     virtual void SetText(const char*) { throw "CEmpty::SetText is not to be called"; }
     virtual void print(ostream& os, unsigned index, int width, int height) const;
-	virtual ~CEmpty() { }
 private:
 };
 
@@ -84,10 +94,11 @@ class CImage :public CCell
 public:
     CImage();
     CImage& AddRow(const char* str);
+    CImage(const CImage& orig);
     virtual CCell& operator=(const CCell& orig);
     virtual void SetText(const char*) { throw "CImage::SetText is not to be called"; }
     virtual void print(ostream& os, unsigned index, int width, int height) const;
-	virtual ~CImage() { }
+    virtual ~CImage() { ; }
 private:
 };
 
@@ -137,7 +148,6 @@ CTable& CTable::operator=(const CTable& table)
     if (this == &table) {
         return *this;
     }
-
 
     for (int i = 0; i < this->m_Rows; i++) {
         for (int j = 0; j < this->m_Cols; j++) {
@@ -264,6 +274,12 @@ ostream& operator <<(ostream& os, const CTable& table)
     return os;
 }
 
+CText::CText(const CText& orig)
+{
+    this->m_Align = orig.m_Align;
+    this->m_Content = orig.m_Content;
+}
+
 CText::CText(const char* str, int align) :m_Align(align)
 {
     string line;
@@ -321,8 +337,16 @@ CImage& CImage::AddRow(const char* str)
     return *this;
 }
 
+CImage::CImage(const CImage& orig)
+{
+    this->m_Content = orig.m_Content;
+}
+
 CCell& CImage::operator=(const CCell& orig)
 {
+    if (this == &orig) {
+        return *this;
+    }
     const CImage* p = dynamic_cast<const CImage*> (&orig);
     this->m_Content = p->m_Content;
 
@@ -352,7 +376,7 @@ void CImage::print(ostream& os, unsigned index, int width, int height) const
 
 #ifndef __PROGTEST__
 int main ( void )
-{
+{ 
   ostringstream oss;
   CTable t0 ( 3, 2 );
   t0 . SetCell ( 0, 0, CText ( "Hello,\n"
