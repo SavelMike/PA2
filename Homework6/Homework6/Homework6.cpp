@@ -92,7 +92,9 @@ private:
 
 void CEmpty::print(ostream& os, unsigned index, int width, int height) const 
 {
-    os << setw(width);
+    if (width > 0) {
+        os << setw(width) << ' ';
+    }
 }
 
 class CImage :public CCell
