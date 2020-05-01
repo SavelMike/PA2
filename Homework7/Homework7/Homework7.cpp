@@ -130,47 +130,65 @@ int main(void)
 
 using namespace std;
 
-template<typename T> 
+template<typename T, typename C> 
 class CFirsttemplate
 {
 public:
-    CFirsttemplate();
+    CFirsttemplate(C c);
     ~CFirsttemplate();
     void addElement(const T& element);
     void sort();
-    friend ostream& operator<< <>(ostream& os, const CFirsttemplate<T>& temp);
+    friend ostream& operator<< <>(ostream& os, const CFirsttemplate<T, C>& temp);
 
 private:
     vector<T> m_VectorT;
-
+    C m_Compare;
 };
 
-template<typename T>
-CFirsttemplate<T>::CFirsttemplate()
+template<typename T, typename C>
+CFirsttemplate<T, C>::CFirsttemplate(C c) :m_Compare(c)
 {
-
+   
 }
 
-template<typename T>
-CFirsttemplate<T>::~CFirsttemplate()
+template<typename T, typename C>
+CFirsttemplate<T, C>::~CFirsttemplate()
 {
 
 } 
 
-template<typename T>
-void CFirsttemplate<T>::addElement(const T& element)
+template<typename T, typename C>
+void CFirsttemplate<T, C>::addElement(const T& element)
 {
     this->m_VectorT.push_back(element);
 }
 
-template<typename T>
-void CFirsttemplate<T>::sort()
+bool CompareChar(const char& a, const char& b)
 {
-    std::sort(this->m_VectorT.begin(), this->m_VectorT.end());
+    return a > b;
 }
 
-template<typename T>
-ostream& operator<<(ostream& os, const CFirsttemplate<T>& temp)
+class IntComparator
+{
+public:
+    IntComparator() { ; }
+    bool operator()(const int& a, const int& b) const { return a > b; }
+private:
+}; 
+
+template<typename T, typename C>
+void CFirsttemplate<T, C>::sort()
+{
+    // Use pointer to function as third argument
+//    std::sort(this->m_VectorT.begin(), this->m_VectorT.end(), compareT<T>);
+    // Use object of class Comparator. Note that class Comparator must have operator() 
+    std::sort(this->m_VectorT.begin(), this->m_VectorT.end(), this->m_Compare);
+    // Lyambda function
+//    std::sort(this->m_VectorT.begin(), this->m_VectorT.end(), [](const T& a, const T& b) { return a > b; });
+}
+
+template<typename T, typename C>
+ostream& operator<<(ostream& os, const CFirsttemplate<T, C>& temp)
 {
     ostream_iterator<T> outit(os, ",");
     std::copy(temp.m_VectorT.begin(), temp.m_VectorT.end(), outit);
@@ -179,23 +197,27 @@ ostream& operator<<(ostream& os, const CFirsttemplate<T>& temp)
 
 int main(void)
 {
-    CFirsttemplate<int> v1;
-    v1.addElement(10);
-    v1.addElement(5);
-    v1.sort();
-    cout << v1 << endl;
+//    CFirsttemplate<int, IntComparator> v10(IntComparator());
+//    CSearch <string, CharComparator> test3(CharComparator(false));
+//    v10.addElement(10);
+//    v10.addElement(5);
+//    v10.addElement(7);
+//    v10.sort();
+//    cout << v10 << endl;
     
-    CFirsttemplate<string> v2;
+    CFirsttemplate<string, bool (*) (const char&, const char&)> v2(CompareChar);
     v2.addElement("Petya");
+    v2.addElement("John");
     v2.addElement("Vasya");
     v2.sort();
     cout << v2 << endl;
 
-    CFirsttemplate<vector<int>> v3;
+
+/*    CFirsttemplate<vector<int>> v3;
     v3.addElement({ 10, 20, 30 });
     v3.addElement({ 1, 2, 3, 4 });
     v3.sort();
  //   cout << v3 << endl;
-
+ */
     return 0;
 }
