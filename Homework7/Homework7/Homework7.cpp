@@ -1,4 +1,3 @@
-#if 0
 #ifndef __PROGTEST__
 #include <cctype>
 #include <cassert>
@@ -23,21 +22,50 @@
 using namespace std;
 #endif /* __PROGTEST__ */
 
-template <typename _Type, typename _Comparator = ... /* todo */ >
+// Explain default for comparator 
+template <typename _Type, typename _Comparator = equal_to<typename _Type::value_type> >
 class CSearch
 {
 public:
     // default constructor
+    CSearch() { ; }
     // constructor with comparator parameter
+    CSearch(_Comparator c):m_Cmp(c) { ; }
     // destructor (if needed)
     CSearch(const CSearch& src) = delete;
     CSearch& operator = (const CSearch& src) = delete;
-    void      Add(int           id,
-        const _Type& needle);
+    void Add(int id, const _Type& needle);
     set<int>  Search(const _Type& hayHeap) const;
 private:
-    // todo
+    vector<_Type> m_Needles;
+    vector<int> m_Ids;
+    _Comparator m_Cmp;
 };
+
+template<typename _Type, typename _Comparator>
+void CSearch<_Type, _Comparator>::Add(int id, const _Type& needle)
+{
+    this->m_Needles.push_back(needle);
+    this->m_Ids.push_back(id);
+}
+
+// hayHeap: this is where to look in
+// this->m_Needles: look for all elements of this vector in hayHeap
+template<typename _Type, typename _Comparator>
+set<int> CSearch<_Type, _Comparator>::Search(const _Type& hayHeap) const
+{
+    set<int> rc;
+    typename vector<_Type>::const_iterator it;
+    
+    for (it = this->m_Needles.begin(); it != this->m_Needles.end(); it++) {
+        if (search(hayHeap.begin(), hayHeap.end(),
+                   (*it).begin(), (*it).end(), this->m_Cmp) != hayHeap.end()) {
+            rc.insert(this->m_Ids[distance(this->m_Needles.begin(), it)]);
+        }
+    }
+    
+    return rc;
+}
 //-------------------------------------------------------------------------------------------------
 #ifndef __PROGTEST__
 class CharComparator
@@ -120,7 +148,8 @@ int main(void)
     return 0;
 }
 #endif /* __PROGTEST__ */
-#endif
+
+#if 0
 
 #include <iostream>
 #include <string>
@@ -138,7 +167,8 @@ public:
     ~CFirsttemplate();
     void addElement(const T& element);
     void sort();
-    friend ostream& operator<< <>(ostream& os, const CFirsttemplate<T, C>& temp);
+    template<class U, class V> 
+    friend ostream& operator<< (ostream& os, const CFirsttemplate<U, V>& temp);
 
 private:
     vector<T> m_VectorT;
@@ -163,15 +193,15 @@ void CFirsttemplate<T, C>::addElement(const T& element)
     this->m_VectorT.push_back(element);
 }
 
-bool CompareChar(const char& a, const char& b)
+bool CompareStr(const string& a, const string& b)
 {
     return a > b;
 }
 
-class IntComparator
+class ComparatorInt
 {
 public:
-    IntComparator() { ; }
+    ComparatorInt() { ; }
     bool operator()(const int& a, const int& b) const { return a > b; }
 private:
 }; 
@@ -197,15 +227,14 @@ ostream& operator<<(ostream& os, const CFirsttemplate<T, C>& temp)
 
 int main(void)
 {
-//    CFirsttemplate<int, IntComparator> v10(IntComparator());
-//    CSearch <string, CharComparator> test3(CharComparator(false));
-//    v10.addElement(10);
-//    v10.addElement(5);
-//    v10.addElement(7);
-//    v10.sort();
-//    cout << v10 << endl;
+    CFirsttemplate<int, ComparatorInt> v10{ ComparatorInt() };
+    v10.addElement(10);
+    v10.addElement(5);
+    v10.addElement(7);
+    v10.sort();
+    cout << v10 << endl;
     
-    CFirsttemplate<string, bool (*) (const char&, const char&)> v2(CompareChar);
+    CFirsttemplate<string, bool (*) (const string&, const string&)> v2(CompareStr);
     v2.addElement("Petya");
     v2.addElement("John");
     v2.addElement("Vasya");
@@ -221,3 +250,5 @@ int main(void)
  */
     return 0;
 }
+
+#endif
