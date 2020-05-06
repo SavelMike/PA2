@@ -21,7 +21,9 @@ public:
 	CTreeNode():m_Median(0), m_Left(NULL), m_Right(NULL) { ; }
 	int get_median() const { return this->m_Median; }   
 	void set_median(int median) { this->m_Median = median; }
+	CTreeNode* get_left() const { return this->m_Left; }
 	void set_left(CTreeNode* left) { this->m_Left = left; }
+	CTreeNode* get_right() const { return this->m_Right; }
 	void set_right(CTreeNode* right) { this->m_Right = right; }
 	vector<CSegment>& get_BeginSorted() { return this->m_BeginSorted; }
 	vector<CSegment>& get_EndSorted() { return this->m_EndSorted; }
@@ -78,16 +80,67 @@ CTreeNode* build_tree(const vector<CSegment>& segments)
 	return node;
 }
 
+vector<CSegment> find_segments(CTreeNode* root, int x)
+{
+	vector<CSegment> rc;
+
+	if (root == NULL) {
+		return rc;
+	}
+	if (x < root->get_median()) {
+		rc = find_segments(root->get_left(), x);
+	}
+	if (x > root->get_median()) {
+		rc = find_segments(root->get_right(), x);
+	}
+	if (x < root->get_median()) {
+		int it = root->get_BeginSorted().size() - 1;
+		while (it != -1 && root->get_BeginSorted()[it].get_begin() <= x) {
+			rc.push_back(root->get_BeginSorted()[it--]);
+		}
+	}
+	if (x >= root->get_median()) {
+		int it = root->get_EndSorted().size() - 1;
+		while (it != -1 && root->get_EndSorted()[it].get_end() >= x) {
+			rc.push_back(root->get_EndSorted()[it--]);
+		}
+	}
+	return rc;
+}
+
+ostream& operator<<(ostream& os, const vector<CSegment>& a)
+{
+/*	for (auto x : a) {
+		os << "[" << x.get_begin() << ", " << x.get_end() << "]";
+	}
+*/
+	cout << a.size() << " segemnts" << endl;
+	return os;
+}
+
+int randinrange(int min, int max) {
+	return min + (std::rand() % (max - min + 1));
+}
+
 int main(void)
 {
 	vector<CSegment> a;
-	a.push_back(CSegment(100, 105));
-	a.push_back(CSegment(0, 3));
-	a.push_back(CSegment(-100, 15));
-	a.push_back(CSegment(300, 605));
-	a.push_back(CSegment(-100, -95));
-	a.push_back(CSegment(-10, 5));
-	CTreeNode* root = build_tree(a);
+	for (int i = 0; i < 100000; i++) {
+		int left = randinrange(-1000000, 1000000);
+		int right = randinrange(-1000000, 1000000);
+		if (right > left) {
+			a.push_back(CSegment(left, right));
+		}
+		else {
+			a.push_back(CSegment(right, left));
+		}
+	}
 
+	CTreeNode* root = build_tree(a);
+	for (int i = 0; i < 1000; i++) {
+		int x = randinrange(-1000000, 1000000);
+		cout << i << ": " << x << ":";
+		cout << find_segments(root, x) << endl;
+	}
 	return 0;
 }
