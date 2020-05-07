@@ -25,12 +25,41 @@ struct CCoord
 };
 #endif /* __PROGTEST__ */
 
+// This class is necessary to implement algorithm "point is inside of convex polygon" 
+class CVector
+{
+public:
+	CVector(const CCoord& begin, const CCoord& end) :m_Begin(begin), m_End(end) { ; }
+	int rotate(const CCoord& point) const;
+	bool intersect(const CVector&) const;
+private:
+	CCoord m_Begin;
+	CCoord m_End;
+};
+
+// Returns positive if point is seen on the left when looking from this->m_Begin() to this->m_End()
+// Return negative     ...           on the right ...
+// Return 0            point is not seen
+int CVector::rotate(const CCoord& point) const
+{
+	return ((this->m_End.m_X - this->m_Begin.m_X) * (point.m_Y - this->m_End.m_Y)) -
+		   ((this->m_End.m_Y - this->m_Begin.m_Y) * (point.m_X - this->m_End.m_X));
+}
+
+// Return true if CVector this intersects with CVector V2
+bool CVector::intersect(const CVector& v2) const
+{
+	return ((this->rotate(v2.m_Begin)) * (this->rotate(v2.m_End)) <= 0) && 
+		   ((v2.rotate(this->m_Begin)) * (v2.rotate(this->m_End)) <= 0);
+}
+
 // Base class for 2d figure 
 class CFigure
 {
 public:
 	CFigure(int ID) :m_ID(ID) { ; }
 	int get_ID() const { return m_ID; }
+	virtual bool point_inside(const CCoord& point) const = 0;
 private:
 	int m_ID;
 };
@@ -42,6 +71,7 @@ public:
 	int get_begin() const { return this->m_Begin; }
 	int get_end() const { return this->m_End; }
 	int get_ID() const { return this->m_Figure->get_ID(); }
+	const CFigure* get_figure() const { return this->m_Figure; }
 private:
 	int m_Begin;
 	int m_End;
@@ -127,9 +157,10 @@ vector<CSegment> find_segments(CTreeNode* root, int x)
 		rc = find_segments(root->get_right(), x);
 	}
 	if (x < root->get_median()) {
-		int it = root->get_BeginSorted().size() - 1;
-		while (it != -1 && root->get_BeginSorted()[it].get_begin() <= x) {
-			rc.push_back(root->get_BeginSorted()[it--]);
+		int it = 0;
+		int max = root->get_BeginSorted().size();
+		while (it < max && root->get_BeginSorted()[it].get_begin() <= x) {
+			rc.push_back(root->get_BeginSorted()[it++]);
 		}
 	}
 	if (x >= root->get_median()) {
@@ -147,7 +178,7 @@ public:
 	CRectangle(int ID, int x1, int y1, int x2, int y2) :CFigure(ID), m_x1(x1), m_y1(y1), m_x2(x2), m_y2(y2) { ; }
 	CSegment horizontal_segment() const;
 	CSegment vertical_segment() const;
-
+	virtual bool point_inside(const CCoord& point) const { return true; }
 private:
 	int m_x1;
 	int m_y1;
@@ -162,7 +193,7 @@ CSegment CRectangle::horizontal_segment() const
 
 CSegment CRectangle::vertical_segment() const
 {
-	return CSegment((m_y1 < m_y2) ? m_x1 : m_y2, (m_y1 > m_y2) ? m_y1 : m_y2, this);
+	return CSegment((m_y1 < m_y2) ? m_y1 : m_y2, (m_y1 > m_y2) ? m_y1 : m_y2, this);
 }
 
 class CCircle: public CFigure
@@ -171,6 +202,7 @@ public:
 	CCircle(int ID, int x, int y, int r) :CFigure(ID), m_x(x), m_y(y), m_r(r) { ; }
 	CSegment horizontal_segment() const;
 	CSegment vertical_segment() const;
+	virtual bool point_inside(const CCoord& point) const;
 private:
 	int m_x;
 	int m_y;
@@ -187,12 +219,18 @@ CSegment CCircle::vertical_segment() const
 	return CSegment(this->m_y - this->m_r, this->m_y + this->m_r, this);
 }
 
+bool CCircle::point_inside(const CCoord& point) const
+{
+	return ((m_x - point.m_X) * (m_x - point.m_X) + (m_y - point.m_Y) * (m_y - point.m_Y)) <= this->m_r * this->m_r;
+}
+
 class CPolygon: public CFigure
 {
 public:
 	CPolygon(int ID, int cnt, const CCoord* v);
 	CSegment horizontal_segment() const;
 	CSegment vertical_segment() const;
+	virtual bool point_inside(const CCoord& point) const;
 private:
 	int m_cnt;
 	vector<int> m_xv;
@@ -219,12 +257,55 @@ CSegment CPolygon::vertical_segment() const
 					*max_element(this->m_yv.begin(), this->m_yv.end()), this);
 }
 
+// For convex polygon only
+bool CPolygon::point_inside(const CCoord& point) const
+{
+	//	Make sure point is not outside
+	int n = this->m_cnt;
+	CVector v01(CCoord(this->m_xv[0], this->m_yv[0]), CCoord(this->m_xv[1], this->m_yv[1]));
+	CVector v0n_1(CCoord(this->m_xv[0], this->m_yv[0]), CCoord(this->m_xv[n - 1], this->m_yv[n - 1]));
+	if (v01.rotate(CCoord(this->m_xv[2], this->m_yv[2])) > 0) {
+		// Vertices are defined counter-clockwise
+		if (v01.rotate(point) < 0 || v0n_1.rotate(point) > 0) {
+			return false;
+		}; 
+	}
+	else {
+		// Vertices are defined clockwise
+		if (v01.rotate(point) > 0 || v0n_1.rotate(point) < 0) {
+			return false;
+		}
+	}
+	
+	// Binary search of the sector containing the point
+	int p = 1;
+	int r = n - 1;
+	while (r - p > 1) {
+		int q = (p + r) / 2;
+		CVector v0q(CCoord(this->m_xv[0], this->m_yv[0]), CCoord(this->m_xv[q], this->m_yv[q]));
+		if (v0q.rotate(point) < 0) {
+			r = q;
+		}
+		else {
+			p = q;
+		}
+	}
+	// Point between vectors directed from point 0 to points p and r;
+	CVector pr(CCoord(this->m_xv[p], this->m_yv[p]), CCoord(this->m_xv[r], this->m_yv[r]));
+	CVector v0p(CCoord(this->m_xv[0], this->m_yv[0]), point);
+	if (!v0p.intersect(pr)) {
+		return true;
+	}
+	return pr.rotate(point) == 0;
+}
+
 class CTriangle: public CFigure
 {
 public:
 	CTriangle(int ID, CCoord a, CCoord b, CCoord c) :CFigure(ID), m_a(a), m_b(b), m_c(c) { ; }
 	CSegment vertical_segment() const;
 	CSegment horizontal_segment() const;
+	virtual bool point_inside(const CCoord& point) const;
 private:
 	CCoord m_a;
 	CCoord m_b;
@@ -241,6 +322,12 @@ CSegment CTriangle::horizontal_segment() const
 {
 	vector<int> array{ this->m_a.m_X, this->m_b.m_X, this->m_c.m_X };
 	return CSegment(*min_element(array.begin(), array.end()), *max_element(array.begin(), array.end()), this);
+}
+
+bool CTriangle::point_inside(const CCoord& point) const
+{
+	CCoord p[3] = { this->m_a, this->m_b, this->m_c };
+	return CPolygon(0, 3, p).point_inside(point);
 }
 
 class CScreen
@@ -317,24 +404,24 @@ void CScreen::Test(int x, int y, int& len, int*& list) const
 {
 	vector<CSegment> hvect = find_segments(this->m_Htree, x);
 	vector<CSegment> vvect = find_segments(this->m_Vtree, y);
-	vector<int> hids;
-	vector<int> vids;
-	for (auto x : hvect) {
-		hids.push_back(x.get_ID());
+	sort(hvect.begin(), hvect.end(), [](const CSegment& a, const CSegment& b) { return a.get_ID() < b.get_ID(); });
+	sort(vvect.begin(), vvect.end(), [](const CSegment& a, const CSegment& b) { return a.get_ID() < b.get_ID(); });
+	vector<CSegment> res;
+	set_intersection(hvect.begin(), hvect.end(), vvect.begin(), vvect.end(), 
+		             back_inserter(res), [](const CSegment& a, const CSegment& b) { return a.get_ID() < b.get_ID(); });
+	vector<int> ids;
+	for (auto z : res) {
+		if (z.get_figure()->point_inside(CCoord( x, y ))) {
+			ids.push_back(z.get_ID());
+		}
 	}
-	sort(hids.begin(), hids.end());
-	for (auto x : vvect) {
-		vids.push_back(x.get_ID());
-	}
-	sort(vids.begin(), vids.end());
-	vector<int> res;
-	set_intersection(hids.begin(), hids.end(), vids.begin(), vids.end(), back_inserter(res));
-	len = res.size();
+
+	len = ids.size();
 	list = new int[len];
 	for (int i = 0; i < len; i++) {
-		list[i] = res[i];
+		list[i] = ids[i];
 	}
-	cout << res << endl;
+	cout << ids << endl;
 }
 
 int main(void)
