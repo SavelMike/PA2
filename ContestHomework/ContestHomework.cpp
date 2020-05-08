@@ -459,7 +459,8 @@ void CScreen::Optimize()
 	this->m_Vtree = build_tree(this->m_Vertical);
 }
 
-ostream& operator<<(ostream& os, const vector<int>& a)
+/*
+	ostream& operator<<(ostream& os, const vector<int>& a)
 {
 	//	copy(a.begin(), a.end(), ostream_iterator<int>(os, ","));
 	//	std::copy(a.begin(), a.end(), ostream_iterator<int>(os," "));
@@ -472,6 +473,7 @@ ostream& operator<<(ostream& os, const vector<int>& a)
 
 	return os;
 }
+*/
 
 void CScreen::Test(int x, int y, int& len, int*& list) const
 {
@@ -491,6 +493,10 @@ void CScreen::Test(int x, int y, int& len, int*& list) const
 	}
 
 	len = ids.size();
+	if (len == 0) {
+		list = nullptr;
+		return;
+	}
 	list = new int[len];
 	for (int i = 0; i < len; i++) {
 		list[i] = ids[i];
@@ -521,6 +527,16 @@ int main(void)
 	delete[] res;
 	S0.Test(35, 25, resLen, res);
 	// resLen = 1, res = [ 2 ]
+	delete[] res;
+
+	CScreen scircles;
+	cout << "Circle test begins" << endl;
+	for (int i = 0, r = 10; i < 29; i++) {
+		scircles.Add(CCircle(i + 1, r * (2 * i + 1), 0, r));
+	}
+	scircles.Optimize();
+	scircles.Test(20, 10, resLen, res);
+	cout << "Circle test end" << endl;
 	delete[] res;
 
 	CScreen  S1;
