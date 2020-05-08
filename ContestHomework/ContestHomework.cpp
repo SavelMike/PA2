@@ -43,14 +43,14 @@ private:
 int CVector::rotate(const CCoord& point) const
 {
 	return ((this->m_End.m_X - this->m_Begin.m_X) * (point.m_Y - this->m_End.m_Y)) -
-		   ((this->m_End.m_Y - this->m_Begin.m_Y) * (point.m_X - this->m_End.m_X));
+		((this->m_End.m_Y - this->m_Begin.m_Y) * (point.m_X - this->m_End.m_X));
 }
 
 // Return true if CVector this intersects with CVector V2
 bool CVector::intersect(const CVector& v2) const
 {
-	return ((this->rotate(v2.m_Begin)) * (this->rotate(v2.m_End)) <= 0) && 
-		   ((v2.rotate(this->m_Begin)) * (v2.rotate(this->m_End)) <= 0);
+	return ((this->rotate(v2.m_Begin)) * (this->rotate(v2.m_End)) <= 0) &&
+		((v2.rotate(this->m_Begin)) * (v2.rotate(this->m_End)) <= 0);
 }
 
 // Base class for 2d figure 
@@ -72,20 +72,39 @@ private:
 class CSegment
 {
 public:
-	CSegment(int a, int b, CFigure* figure) : m_Begin(a), m_End(b), m_Figure(figure) { this->m_Figure->get_Refcnt(); }
+	CSegment(int a, int b, int id)
+		: m_Begin(a), m_End(b), m_ID(id), m_Figure(nullptr) {
+		;
+	}
+	CSegment(const CSegment& orig);
 	~CSegment();
 	int get_begin() const { return this->m_Begin; }
 	int get_end() const { return this->m_End; }
-	int get_ID() const { return this->m_Figure->get_ID(); }
+	int get_ID() const { return this->m_ID; }
 	const CFigure* get_figure() const { return this->m_Figure; }
+	void set_figure(CFigure* figure) {
+		this->m_Figure = figure;
+		figure->get_Refcnt();
+	};
 private:
 	int m_Begin;
 	int m_End;
-        CFigure* m_Figure;
+	int m_ID;
+	CFigure* m_Figure;
 };
+
+CSegment::CSegment(const CSegment& orig)
+	: m_Begin(orig.m_Begin), m_End(orig.m_End), m_ID(orig.m_ID), m_Figure(orig.m_Figure)
+{
+	if (orig.m_Figure)
+		orig.m_Figure->get_Refcnt();
+}
 
 CSegment::~CSegment()
 {
+	if (this->m_Figure == nullptr)
+		return;
+
 	this->m_Figure->put_Refcnt();
 	if (this->m_Figure->Refcnt() == 0) {
 		delete this->m_Figure;
@@ -193,10 +212,13 @@ vector<CSegment> find_segments(CTreeNode* root, int x)
 	return rc;
 }
 
-class CRectangle: public CFigure
+class CRectangle : public CFigure
 {
 public:
-	CRectangle(int ID, int x1, int y1, int x2, int y2) :CFigure(ID), m_x1(x1), m_y1(y1), m_x2(x2), m_y2(y2) { ; }
+	CRectangle(int ID, int x1, int y1, int x2, int y2)
+		:CFigure(ID), m_x1(x1), m_y1(y1), m_x2(x2), m_y2(y2) {
+		;
+	}
 	virtual ~CRectangle() { ; }
 	CSegment horizontal_segment();
 	CSegment vertical_segment();
@@ -210,15 +232,17 @@ private:
 
 CSegment CRectangle::horizontal_segment()
 {
-	return CSegment((m_x1 < m_x2) ? m_x1 : m_x2, (m_x1 > m_x2) ? m_x1 : m_x2, this);
+	return CSegment((m_x1 < m_x2) ? m_x1 : m_x2,
+		(m_x1 > m_x2) ? m_x1 : m_x2, this->get_ID());
 }
 
 CSegment CRectangle::vertical_segment()
 {
-	return CSegment((m_y1 < m_y2) ? m_y1 : m_y2, (m_y1 > m_y2) ? m_y1 : m_y2, this);
+	return CSegment((m_y1 < m_y2) ? m_y1 : m_y2,
+		(m_y1 > m_y2) ? m_y1 : m_y2, this->get_ID());
 }
 
-class CCircle: public CFigure
+class CCircle : public CFigure
 {
 public:
 	CCircle(int ID, int x, int y, int r) :CFigure(ID), m_x(x), m_y(y), m_r(r) { ; }
@@ -234,12 +258,14 @@ private:
 
 CSegment CCircle::horizontal_segment()
 {
-	return	CSegment(this->m_x - this->m_r, this->m_x + this->m_r, this);
+	return	CSegment(this->m_x - this->m_r, this->m_x + this->m_r,
+		this->get_ID());
 }
 
 CSegment CCircle::vertical_segment()
 {
-	return CSegment(this->m_y - this->m_r, this->m_y + this->m_r, this);
+	return CSegment(this->m_y - this->m_r, this->m_y + this->m_r,
+		this->get_ID());
 }
 
 bool CCircle::point_inside(const CCoord& point) const
@@ -247,7 +273,7 @@ bool CCircle::point_inside(const CCoord& point) const
 	return ((m_x - point.m_X) * (m_x - point.m_X) + (m_y - point.m_Y) * (m_y - point.m_Y)) <= this->m_r * this->m_r;
 }
 
-class CPolygon: public CFigure
+class CPolygon : public CFigure
 {
 public:
 	CPolygon(int ID, int cnt, const CCoord* v);
@@ -261,7 +287,7 @@ private:
 	vector<int> m_yv;
 };
 
-CPolygon::CPolygon(int ID, int cnt, const CCoord* v): CFigure(ID), m_cnt(cnt)
+CPolygon::CPolygon(int ID, int cnt, const CCoord* v) : CFigure(ID), m_cnt(cnt)
 {
 	for (int i = 0; i < cnt; i++) {
 		this->m_xv.push_back(v[i].m_X);
@@ -272,13 +298,15 @@ CPolygon::CPolygon(int ID, int cnt, const CCoord* v): CFigure(ID), m_cnt(cnt)
 CSegment CPolygon::horizontal_segment()
 {
 	return CSegment(*min_element(this->m_xv.begin(), this->m_xv.end()),
-			*max_element(this->m_xv.begin(), this->m_xv.end()), this);
+		*max_element(this->m_xv.begin(), this->m_xv.end()),
+		this->get_ID());
 }
 
 CSegment CPolygon::vertical_segment()
 {
 	return CSegment(*min_element(this->m_yv.begin(), this->m_yv.end()),
-			*max_element(this->m_yv.begin(), this->m_yv.end()), this);
+		*max_element(this->m_yv.begin(), this->m_yv.end()),
+		this->get_ID());
 }
 
 // For convex polygon only
@@ -286,13 +314,15 @@ bool CPolygon::point_inside(const CCoord& point) const
 {
 	//	Make sure point is not outside
 	int n = this->m_cnt;
-	CVector v01(CCoord(this->m_xv[0], this->m_yv[0]), CCoord(this->m_xv[1], this->m_yv[1]));
-	CVector v0n_1(CCoord(this->m_xv[0], this->m_yv[0]), CCoord(this->m_xv[n - 1], this->m_yv[n - 1]));
+	CVector v01(CCoord(this->m_xv[0], this->m_yv[0]),
+		CCoord(this->m_xv[1], this->m_yv[1]));
+	CVector v0n_1(CCoord(this->m_xv[0], this->m_yv[0]),
+		CCoord(this->m_xv[n - 1], this->m_yv[n - 1]));
 	if (v01.rotate(CCoord(this->m_xv[2], this->m_yv[2])) > 0) {
 		// Vertices are defined counter-clockwise
 		if (v01.rotate(point) < 0 || v0n_1.rotate(point) > 0) {
 			return false;
-		}; 
+		};
 	}
 	else {
 		// Vertices are defined clockwise
@@ -300,13 +330,14 @@ bool CPolygon::point_inside(const CCoord& point) const
 			return false;
 		}
 	}
-	
+
 	// Binary search of the sector containing the point
 	int p = 1;
 	int r = n - 1;
 	while (r - p > 1) {
 		int q = (p + r) / 2;
-		CVector v0q(CCoord(this->m_xv[0], this->m_yv[0]), CCoord(this->m_xv[q], this->m_yv[q]));
+		CVector v0q(CCoord(this->m_xv[0], this->m_yv[0]),
+			CCoord(this->m_xv[q], this->m_yv[q]));
 		if (v0q.rotate(point) < 0) {
 			r = q;
 		}
@@ -315,7 +346,8 @@ bool CPolygon::point_inside(const CCoord& point) const
 		}
 	}
 	// Point between vectors directed from point 0 to points p and r;
-	CVector pr(CCoord(this->m_xv[p], this->m_yv[p]), CCoord(this->m_xv[r], this->m_yv[r]));
+	CVector pr(CCoord(this->m_xv[p], this->m_yv[p]),
+		CCoord(this->m_xv[r], this->m_yv[r]));
 	CVector v0p(CCoord(this->m_xv[0], this->m_yv[0]), point);
 	if (!v0p.intersect(pr)) {
 		return true;
@@ -323,7 +355,7 @@ bool CPolygon::point_inside(const CCoord& point) const
 	return pr.rotate(point) == 0;
 }
 
-class CTriangle: public CFigure
+class CTriangle : public CFigure
 {
 public:
 	CTriangle(int ID, CCoord a, CCoord b, CCoord c) :CFigure(ID), m_a(a), m_b(b), m_c(c) { ; }
@@ -339,16 +371,18 @@ private:
 
 CSegment CTriangle::vertical_segment()
 {
-	vector<int> array { this->m_a.m_Y, this->m_b.m_Y, this->m_c.m_Y };	
+	vector<int> array{ this->m_a.m_Y, this->m_b.m_Y, this->m_c.m_Y };
 	return CSegment(*min_element(array.begin(), array.end()),
-			*max_element(array.begin(), array.end()), this);
+		*max_element(array.begin(), array.end()),
+		this->get_ID());
 }
 
 CSegment CTriangle::horizontal_segment()
 {
 	vector<int> array{ this->m_a.m_X, this->m_b.m_X, this->m_c.m_X };
 	return CSegment(*min_element(array.begin(), array.end()),
-			*max_element(array.begin(), array.end()), this);
+		*max_element(array.begin(), array.end()),
+		this->get_ID());
 }
 
 bool CTriangle::point_inside(const CCoord& point) const
@@ -361,15 +395,15 @@ class CScreen
 {
 public:
 	// default constructor
-	CScreen():m_Horizontal(), m_Vertical(), m_Htree(nullptr), m_Vtree(nullptr) { ; }
-    // destructor
+	CScreen() :m_Horizontal(), m_Vertical(), m_Htree(nullptr), m_Vtree(nullptr) { ; }
+	// destructor
 	~CScreen() { delete this->m_Htree; delete this->m_Vtree; }
-    // method(s) Add
+	// method(s) Add
 	void Add(const CCircle& c);
 	void Add(const CRectangle& r);
 	void Add(const CTriangle& t);
 	void Add(const CPolygon& p);
-    // method Test
+	// method Test
 	void Optimize(void);
 	void Test(int x, int y, int& len, int*& list) const;
 	// + your implementation
@@ -386,44 +420,56 @@ void CScreen::Add(const CCircle& c)
 {
 	CCircle* o = new CCircle(c);
 	this->m_Horizontal.push_back(o->horizontal_segment());
+	this->m_Horizontal[this->m_Horizontal.size() - 1].set_figure(o);
 	this->m_Vertical.push_back(o->vertical_segment());
+	this->m_Vertical[this->m_Vertical.size() - 1].set_figure(o);
 }
 
 void CScreen::Add(const CRectangle& r)
 {
 	CRectangle* o = new CRectangle(r);
 	this->m_Horizontal.push_back(o->horizontal_segment());
+	this->m_Horizontal[this->m_Horizontal.size() - 1].set_figure(o);
 	this->m_Vertical.push_back(o->vertical_segment());
+	this->m_Vertical[this->m_Vertical.size() - 1].set_figure(o);
 }
 
 void CScreen::Add(const CTriangle& t)
 {
 	CTriangle* o = new CTriangle(t);
 	this->m_Horizontal.push_back(o->horizontal_segment());
+	this->m_Horizontal[this->m_Horizontal.size() - 1].set_figure(o);
 	this->m_Vertical.push_back(o->vertical_segment());
+	this->m_Vertical[this->m_Vertical.size() - 1].set_figure(o);
 }
 
 void CScreen::Add(const CPolygon& p)
 {
 	CPolygon* o = new CPolygon(p);
 	this->m_Horizontal.push_back(o->horizontal_segment());
+	this->m_Horizontal[this->m_Horizontal.size() - 1].set_figure(o);
 	this->m_Vertical.push_back(o->vertical_segment());
+	this->m_Vertical[this->m_Vertical.size() - 1].set_figure(o);
 }
 
 // Build two interval trees
 void CScreen::Optimize()
 {
-	this->m_Htree = build_tree(this->m_Horizontal);	
+	this->m_Htree = build_tree(this->m_Horizontal);
 	this->m_Vtree = build_tree(this->m_Vertical);
 }
 
 ostream& operator<<(ostream& os, const vector<int>& a)
 {
+	//	copy(a.begin(), a.end(), ostream_iterator<int>(os, ","));
+	//	std::copy(a.begin(), a.end(), ostream_iterator<int>(os," "));
+
 	os << "[ ";
 	for (auto x : a) {
 		os << " " << x;
 	}
 	os << "]";
+
 	return os;
 }
 
@@ -434,11 +480,12 @@ void CScreen::Test(int x, int y, int& len, int*& list) const
 	sort(hvect.begin(), hvect.end(), [](const CSegment& a, const CSegment& b) { return a.get_ID() < b.get_ID(); });
 	sort(vvect.begin(), vvect.end(), [](const CSegment& a, const CSegment& b) { return a.get_ID() < b.get_ID(); });
 	vector<CSegment> res;
-	set_intersection(hvect.begin(), hvect.end(), vvect.begin(), vvect.end(), 
-		             back_inserter(res), [](const CSegment& a, const CSegment& b) { return a.get_ID() < b.get_ID(); });
+	set_intersection(hvect.begin(), hvect.end(), vvect.begin(), vvect.end(),
+		back_inserter(res),
+		[](const CSegment& a, const CSegment& b) { return a.get_ID() < b.get_ID(); });
 	vector<int> ids;
 	for (auto z : res) {
-		if (z.get_figure()->point_inside(CCoord( x, y ))) {
+		if (z.get_figure()->point_inside(CCoord(x, y))) {
 			ids.push_back(z.get_ID());
 		}
 	}
@@ -458,7 +505,7 @@ int main(void)
 	S0.Add(CRectangle(1, 10, 20, 30, 40));
 	S0.Add(CRectangle(2, 20, 10, 40, 30));
 	S0.Add(CTriangle(3, CCoord(10, 20), CCoord(20, 10), CCoord(30, 30)));
-	return 0;
+	//return 0;
 	S0.Optimize();
 	S0.Test(0, 0, resLen, res);
 	// resLen = 0, res = [ ]
