@@ -57,12 +57,13 @@ bool CVector::intersect(const CVector& v2) const
 class CFigure
 {
 public:
-	CFigure(int ID) :m_ID(ID), m_Refcnt(2) { ; }
+	CFigure(int ID) :m_ID(ID), m_Refcnt(0) { ; }
 	virtual ~CFigure() { ; }
 	int get_ID() const { return m_ID; }
 	virtual bool point_inside(const CCoord& point) const = 0;
-	void dec_Refcnt() {  this->m_Refcnt--;  }
-	int get_Refcnt() { return this->m_Refcnt; }
+	void put_Refcnt() { this->m_Refcnt--; }
+	void get_Refcnt() { this->m_Refcnt++; }
+	int Refcnt() { return this->m_Refcnt; }
 private:
 	int m_ID;
 	int m_Refcnt;
@@ -71,7 +72,7 @@ private:
 class CSegment
 {
 public:
-	CSegment(int a, int b, CFigure* figure) :m_Begin(a), m_End(b), m_Figure(figure) { ; }
+	CSegment(int a, int b, CFigure* figure) : m_Begin(a), m_End(b), m_Figure(figure) { this->m_Figure->get_Refcnt(); }
 	~CSegment();
 	int get_begin() const { return this->m_Begin; }
 	int get_end() const { return this->m_End; }
@@ -85,8 +86,8 @@ private:
 
 CSegment::~CSegment()
 {
-	this->m_Figure->dec_Refcnt();
-	if (this->m_Figure->get_Refcnt() == 0) {
+	this->m_Figure->put_Refcnt();
+	if (this->m_Figure->Refcnt() == 0) {
 		delete this->m_Figure;
 	}
 }
@@ -455,9 +456,9 @@ int main(void)
 	int* res, resLen;
 	CScreen  S0;
 	S0.Add(CRectangle(1, 10, 20, 30, 40));
-	return 0;
 	S0.Add(CRectangle(2, 20, 10, 40, 30));
 	S0.Add(CTriangle(3, CCoord(10, 20), CCoord(20, 10), CCoord(30, 30)));
+	return 0;
 	S0.Optimize();
 	S0.Test(0, 0, resLen, res);
 	// resLen = 0, res = [ ]
