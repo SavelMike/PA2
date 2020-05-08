@@ -67,7 +67,8 @@ private:
 class CSegment
 {
 public:
-	CSegment(int a, int b, const CFigure* figure) :m_Begin(a), m_End(b), m_Figure(figure) { ; }
+	CSegment(int a, int b, const CFigure* figure) :m_Begin(a), m_End(b), m_Figure(figure), m_Refcnt(2) { ; }
+	~CSegment();
 	int get_begin() const { return this->m_Begin; }
 	int get_end() const { return this->m_End; }
 	int get_ID() const { return this->m_Figure->get_ID(); }
@@ -76,7 +77,16 @@ private:
 	int m_Begin;
 	int m_End;
 	const CFigure* m_Figure;
+	int m_Refcnt;
 };
+
+CSegment::~CSegment()
+{
+	this->m_Refcnt--;
+	if (this->m_Refcnt == 0) {
+		delete this->m_Figure;
+	}
+}
 
 class CTreeNode
 {
