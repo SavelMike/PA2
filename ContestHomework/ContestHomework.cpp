@@ -82,6 +82,7 @@ class CTreeNode
 {
 public:
 	CTreeNode() :m_Median(0), m_Left(NULL), m_Right(NULL) { ; }
+	~CTreeNode();
 	int get_median() const { return this->m_Median; }
 	void set_median(int median) { this->m_Median = median; }
 	CTreeNode* get_left() const { return this->m_Left; }
@@ -98,6 +99,12 @@ private:
 	CTreeNode* m_Left;
 	CTreeNode* m_Right;
 };
+
+CTreeNode::~CTreeNode()
+{
+	delete this->m_Left;
+	delete this->m_Right;
+}
 
 int get_median(const vector<CSegment>& segments)
 {
@@ -336,7 +343,7 @@ public:
 	// default constructor
 	CScreen():m_Horizontal(), m_Vertical(), m_Htree(nullptr), m_Vtree(nullptr) { ; }
     // destructor
-	~CScreen() { ; }
+	~CScreen() { delete this->m_Htree; delete this->m_Vtree; }
     // method(s) Add
 	void Add(const CCircle& c);
 	void Add(const CRectangle& r);
@@ -483,6 +490,10 @@ int main(void)
 	delete[] res;
 	S2.Test(11, 10, resLen, res);
 	// resLen = 0, res = [ ]
+	delete[] res;
+
+	// footest
+	S2.Test(20, 20, resLen, res);
 	delete[] res;
 
 	return 0;
