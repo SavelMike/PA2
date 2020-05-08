@@ -495,7 +495,7 @@ void CScreen::Test(int x, int y, int& len, int*& list) const
 	for (int i = 0; i < len; i++) {
 		list[i] = ids[i];
 	}
-	cout << ids << endl;
+//	cout << ids << endl;
 }
 
 int main(void)
@@ -566,28 +566,3 @@ int main(void)
 
 	return 0;
 }
-
-#if 0 
-int main(void)
-{
-	vector<CSegment> a;
-	for (int i = 0; i < 100000; i++) {
-		int left = randinrange(-1000000, 1000000);
-		int right = randinrange(-1000000, 1000000);
-		if (right > left) {
-			a.push_back(CSegment(left, right));
-		}
-		else {
-			a.push_back(CSegment(right, left));
-		}
-	}
-
-	CTreeNode* root = build_tree(a);
-	for (int i = 0; i < 1000; i++) {
-		int x = randinrange(-1000000, 1000000);
-		cout << i << ": " << x << ":";
-		cout << find_segments(root, x) << endl;
-	}
-	return 0;
-}
-#endif
