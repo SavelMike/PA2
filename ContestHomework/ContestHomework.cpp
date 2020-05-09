@@ -42,8 +42,21 @@ private:
 // Return 0            point is not seen
 int CVector::rotate(const CCoord& point) const
 {
-	return ((this->m_End.m_X - this->m_Begin.m_X) * (point.m_Y - this->m_End.m_Y)) -
-		((this->m_End.m_Y - this->m_Begin.m_Y) * (point.m_X - this->m_End.m_X));
+	long long abeginX = this->m_Begin.m_X;
+	long long abeginY = this->m_Begin.m_Y;
+	long long aendX = this->m_End.m_X;
+	long long aendY = this->m_End.m_Y;
+	long long pX = point.m_X;
+	long long pY = point.m_Y;
+	long long rc;
+
+	/* vector factor */
+	rc = ((aendX - abeginX) * (pY - aendY)) - ((aendY - abeginY) * (pX - aendX));
+	if (rc < 0)
+		return -1;
+	if (rc > 0)
+		return 1;
+	return 0;
 }
 
 // Return true if CVector this intersects with CVector V2
@@ -270,7 +283,14 @@ CSegment CCircle::vertical_segment()
 
 bool CCircle::point_inside(const CCoord& point) const
 {
-	return ((m_x - point.m_X) * (m_x - point.m_X) + (m_y - point.m_Y) * (m_y - point.m_Y)) <= this->m_r * this->m_r;
+	long long a, b, c;
+
+	a = this->m_x;
+	a -= point.m_X;
+	b = this->m_y;
+	b -= point.m_Y;
+	c = this->m_r;
+	return a * a + b * b <= c * c;
 }
 
 class CPolygon : public CFigure
@@ -459,12 +479,9 @@ void CScreen::Optimize()
 	this->m_Vtree = build_tree(this->m_Vertical);
 }
 
-/*
-	ostream& operator<<(ostream& os, const vector<int>& a)
-{
-	//	copy(a.begin(), a.end(), ostream_iterator<int>(os, ","));
-	//	std::copy(a.begin(), a.end(), ostream_iterator<int>(os," "));
 
+ostream& operator<<(ostream& os, const vector<int>& a)
+{
 	os << "[ ";
 	for (auto x : a) {
 		os << " " << x;
@@ -473,7 +490,6 @@ void CScreen::Optimize()
 
 	return os;
 }
-*/
 
 void CScreen::Test(int x, int y, int& len, int*& list) const
 {
@@ -508,10 +524,26 @@ int main(void)
 {
 	int* res, resLen;
 	CScreen  S0;
+
+/*	// big triangle
+	CScreen bt;
+	int s = 1048576 / 1;
+	bt.Add(CTriangle(100, CCoord(-s, s), CCoord(s, s), CCoord(0, -s)));
+	bt.Optimize();
+	bt.Test(-s, 0, resLen, res);
+	delete[] res;
+
+	// big circle
+	CScreen bc;
+	int r = 1048576 / 1;
+	bc.Add(CCircle(1, r, 0, r));
+	bc.Optimize();
+	bc.Test(2 * r, r, resLen, res);
+	delete[] res;
+*/
 	S0.Add(CRectangle(1, 10, 20, 30, 40));
 	S0.Add(CRectangle(2, 20, 10, 40, 30));
 	S0.Add(CTriangle(3, CCoord(10, 20), CCoord(20, 10), CCoord(30, 30)));
-	//return 0;
 	S0.Optimize();
 	S0.Test(0, 0, resLen, res);
 	// resLen = 0, res = [ ]
@@ -527,16 +559,6 @@ int main(void)
 	delete[] res;
 	S0.Test(35, 25, resLen, res);
 	// resLen = 1, res = [ 2 ]
-	delete[] res;
-
-	CScreen scircles;
-	cout << "Circle test begins" << endl;
-	for (int i = 0, r = 10; i < 29; i++) {
-		scircles.Add(CCircle(i + 1, r * (2 * i + 1), 0, r));
-	}
-	scircles.Optimize();
-	scircles.Test(20, 10, resLen, res);
-	cout << "Circle test end" << endl;
 	delete[] res;
 
 	CScreen  S1;
