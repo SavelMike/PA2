@@ -10,43 +10,37 @@ Task: arbitrary precision calculator
     6) "load" - load previously saved state back from file
 
 2. Polymorphism design
-Base class CLexem
-    // Numbers, variable names, parentheses, operators(+, -, *, /, %)
-Base class CResult: public CLexem
-class CIntnumber: public CResult
-class CIntvar: public CIntnumber
-class CFractnumber: public CResult
-class CFractvar: public CFractnumber
+Thre main classes:
+ CLexer:
+	Reads input, returns object of class CNumber and object of class COperation
+ CNumber:
+	It stores information about number in three vectors of integers:
+		a) integer part
+		b) fractional part
+		c) exponent
+	For example: 1.2E-3: 1 goes to integer part, 2 goes to fractional part and 3 goes to exponential part
+	Operators: +, -, *, /, %.
 
-Base class: CExpression
-    virtual CResult calculate() 
-class CAdd: public CExpression
-class CSubstract: public CExpression
-class CMultiply: public CExpression
-class CDivision: public CExpression
-class CMod: public CExpression
+ COperation:
+	Base class.
+	Virtual method operation (CNumber v1, CNumber v2);
 
-Class CPostfix
-{
-	add(istream& is); // Add lexema to postfix notation (part of conversion from infix notation)		
-	calculate(); // Calculate value of expression using postfix notation
-}
-  
-expr_evaluation()
-{
-	CPostfix expr;
-	while (expr.add(is)) { ; }
-	cout << expr.calculate() << endl;
-}
-
+Derived classes from COperation:
+ CAdd: public COperation
+ CSubstract: public COperation
+ CMultiply: public COperation
+ CDivision: public COperation
+ CMod: public COperation
+They implement virtual method operation().
+	
 3. Base implementation - header files with class declarations,
-Use postfix notation to calculate input expression: 
-    pros:
-	1. Recursion algoritms are not required
-	2. Handling of parentheses simplified 
-Use container vector<CLexem*> as stack for manipulation postfix notation (using push_back and pop_back). 
+1) CLexer.h: contains declaration of class CLexer.
+2) CNumber.h: declared class CNumber
+3) COperation.h: declares class COperation and classes derived of it
 
 4. Work in progress implementation - cpp files
+CLexer.cpp, CNumber.cpp, COperation.cpp, main.cpp
+
 
 
 
