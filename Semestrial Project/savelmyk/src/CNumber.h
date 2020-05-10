@@ -1,6 +1,12 @@
 // CNumber used to handle numbers of arbitrary precision
+
+#ifndef CNUMBER_H
+
+#define CNUMBER_H
 #include <vector>
 #include <iostream>
+
+using namespace std;
 
 class CNumber {
 private:
@@ -21,3 +27,5 @@ public:
 	CNumber operator %(const CNumber&) const { return CNumber(1); }
 	friend ostream& operator <<(ostream& os, const CNumber& num);
 };
+
+#endif

@@ -1,10 +1,14 @@
 // COperation handles binary expressions: +, -, *, /, %
 
+#ifndef COPERATION_H
+
+#define COPERATION_H 
+
 #include "CNumber.h"
 
 class COperation {
 public:
-	virtual CNumber operation(const CNumber* v1, const CNumber* v2)  const = 0;
+	virtual CNumber operation(const CNumber* v1, const CNumber* v2)  const { return *v1; }
 };
 
 class CAdd : public COperation {
@@ -41,3 +45,5 @@ public:
 	CNone() {}
 	virtual CNumber operation(const CNumber* v1, const CNumber* v2) const { return *v1; }
 };
+
+#endif

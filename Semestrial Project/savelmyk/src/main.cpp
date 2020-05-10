@@ -4,6 +4,8 @@
 #include "COperation.h"
 #include "CLexer.h"
 
+CNumber expr(CLexer& lex);
+
 CNumber factor(CLexer& lex)
 {
 	CNumber v1;
@@ -30,7 +32,7 @@ CNumber expr(CLexer& lex)
 	CNumber v2 = expr(lex);
 	
 	// The below will run CAdd::operation or CSub::operation 
-	return lex.exprop().op(&v1, &v2);
+	return lex.exprop().operation(&v1, &v2);
 }
 
 int main()
