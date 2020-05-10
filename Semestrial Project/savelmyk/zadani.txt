@@ -2,7 +2,7 @@ Task: arbitrary precision calculator
 
 1. Exact task specification
   User interaction:
-    1) Expression evaluation // See below expr_evaluation
+    1) Expression evaluation
     2) Variable assignment: varname = expression
     3) "quit" - program terminates
     4) "help" - document available actions
@@ -12,30 +12,34 @@ Task: arbitrary precision calculator
 2. Polymorphism design
 Thre main classes:
  CLexer:
-	Reads input, returns object of class CNumber and object of class COperation
+	Reads input, returns object of class CNumber or object of class COperation
  CNumber:
 	It stores information about number in three vectors of integers:
 		a) integer part
 		b) fractional part
 		c) exponent
-	For example: 1.2E-3: 1 goes to integer part, 2 goes to fractional part and 3 goes to exponential part
-	Operators: +, -, *, /, %.
+	For example:  1.2E-3: 1 goes to integer part, 2 goes to fractional part and 3 goes to exponential part
 
+	Overloaded operators: +, -, *, /, %.
  COperation:
 	Base class.
-	Virtual method operation (CNumber v1, CNumber v2);
+	Virtual method: CNumber operation (CNumber v1, CNumber v2);
 
 Derived classes from COperation:
  CAdd: public COperation
- CSubstract: public COperation
- CMultiply: public COperation
- CDivision: public COperation
+ CSub: public COperation
+ CMul: public COperation
+ CDiv: public COperation
  CMod: public COperation
-They implement virtual method operation().
-	
+    They implement virtual method operation().
+
+Derived class from CNumber:
+ CVariable: public CNumber
+    Used to handle variables
+
 3. Base implementation - header files with class declarations,
-1) CLexer.h: contains declaration of class CLexer.
-2) CNumber.h: declared class CNumber
+1) CLexer.h: declares class CLexer.
+2) CNumber.h: declares class CNumber
 3) COperation.h: declares class COperation and classes derived of it
 
 4. Work in progress implementation - cpp files
