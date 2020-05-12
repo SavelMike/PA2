@@ -20,11 +20,11 @@ public:
 	CNumber() :m_Invalid(true) {}
 	CNumber(int el) :m_Invalid(false) { m_IntPart.push_back(el); }
 	bool isinvalid() { return m_Invalid; }
-	CNumber operator +(const CNumber&) const { return CNumber(1); }
-	CNumber operator -(const CNumber&) const { return CNumber(1); }
-	CNumber operator *(const CNumber&) const { return CNumber(1); }
-	CNumber operator /(const CNumber&) const { return CNumber(1); }
-	CNumber operator %(const CNumber&) const { return CNumber(1); }
+	CNumber operator +(const CNumber&) const;
+	CNumber operator -(const CNumber&) const;
+	CNumber operator *(const CNumber&) const;
+	CNumber operator /(const CNumber&) const;
+	CNumber operator %(const CNumber&) const;
 	friend ostream& operator <<(ostream& os, const CNumber& num);
 };
 

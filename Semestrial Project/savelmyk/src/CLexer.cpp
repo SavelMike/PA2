@@ -16,47 +16,54 @@ bool CLexer::isparenthesis(char p)
 // Store mantissa and exponent to member variables of CNumber
 CNumber CLexer::number()
 {
-	CNumber res;
-
-	while (1) {
-		// to do		
+	int res = 0;
+	
+	while(1) {
+		char c = cin.get();
+		if (c >= '0' && c <= '9') {
+			res = res * 10 + c - '0';
+		}
+		else
+		{
+			cin.putback(c);
+			break;
+		}
 	}
-
-	return res;
+	return CNumber(res);
 }
 
 // Reads next char from input, return COperation corresponding to read char, CMul or CDef or CMod
-COperation CLexer::factorop()
+COperation* CLexer::factorop()
 {
 	m_last = cin.get();
 
 	switch (m_last) {
 	case '*':
-		return CMul();
+		return new CMul();
 	case '/':
-		return CDiv();
+		return new CDiv();
 	case '%':
-		return CMod();
+		return new CMod();
 	default:
 		cin.putback(m_last);
 	}
-	return CNone();
+	return new CNone();
 }
 
 // Reads next char from input, return COperation corresponding to read char, CAdd or CSub
-COperation CLexer::exprop()
+COperation* CLexer::exprop()
 {
 	m_last = cin.get();
 
 	switch (m_last) {
 	case '+':
-		return CAdd();
+		return new CAdd();
 	case '-':
-		return CSub();
+		return new CSub();
 	case '\n':
-		return CNone();
+		return new CNone();
 	default:
 		cin.putback(m_last);
-		return CNone();
+		return new CNone();
 	}
 }

@@ -20,19 +20,29 @@ CNumber factor(CLexer& lex)
 		v1 = lex.number();
 	}
 
+	COperation* op = lex.factorop();
+	if (!(op->isFactor())) {
+		// Nor multiply, division or remainder of division
+		return v1;
+	}
 	CNumber v2 = factor(lex);
 
-	// The below will run CMul::operation or CDif::operation or CMod::operation
-	return lex.factorop().operation(&v1, &v2);
+	// The below will run CMul::operation or CDiv::operation or CMod::operation
+	return op->operation(&v1, &v2);
 }
 
 CNumber expr(CLexer& lex)
 {
 	CNumber v1 = factor(lex);
+	COperation* op = lex.exprop();
+	if (!(op->isExpr())) {
+		// Op is not plus and not minus
+		return v1;
+	}
 	CNumber v2 = expr(lex);
 	
 	// The below will run CAdd::operation or CSub::operation 
-	return lex.exprop().operation(&v1, &v2);
+	return op->operation(&v1, &v2);
 }
 
 int main()

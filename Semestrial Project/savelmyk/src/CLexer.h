@@ -7,8 +7,8 @@ public:
 	bool isparenthesis(char p);
 	void putback();
 	CNumber number();
-	COperation factorop();
-	COperation exprop();
+	COperation* factorop();
+	COperation* exprop();
 private:
 	char m_last;
 };
