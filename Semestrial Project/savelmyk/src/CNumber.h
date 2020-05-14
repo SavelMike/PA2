@@ -17,8 +17,8 @@ private:
 	bool m_exppositive;
 	vector<int> m_Exp;
 public:
-	CNumber() :m_Invalid(true) {}
-	CNumber(int el) :m_Invalid(false) { m_IntPart.push_back(el); }
+	CNumber() :m_Invalid(true), m_positive(true), m_exppositive(true) {}
+	CNumber(int el) :m_Invalid(false), m_positive(true), m_exppositive(true) { m_IntPart.push_back(el); }
 	bool isinvalid() { return m_Invalid; }
 	CNumber operator +(const CNumber&) const;
 	CNumber operator -(const CNumber&) const;

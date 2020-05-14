@@ -57,7 +57,12 @@ int main()
 {
 	CLexer lex;
 	
-	cout << "enter expression: " << endl;
-	cout << expr(lex) << endl;
+	try {
+		cout << "enter expression: " << endl;
+		cout << expr(lex) << endl;
+	}
+	catch (const char* str) {
+		cout << str << endl;
+	}
 	return 0;
 }

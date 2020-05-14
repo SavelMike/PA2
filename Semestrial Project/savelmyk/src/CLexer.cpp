@@ -39,14 +39,20 @@ CNumber CLexer::number()
 			break;
 		}
 	}
+	
+	int ndigits = 0;
 	while(1) {
 		char c = cin.get();
 		if (c >= '0' && c <= '9') {
 			res = res * 10 + c - '0';
+			ndigits++;
 		}
 		else
 		{
 			cin.putback(c);
+			if (ndigits == 0) {
+				throw "Number is not found";
+			}
 			break;
 		}
 	}
@@ -101,8 +107,6 @@ COperation* CLexer::exprop()
 		return new CAdd();
 	case '-':
 		return new CSub();
-	case '\n':
-		return new CNone();
 	default:
 		cin.putback(m_last);
 		return new CNone();
