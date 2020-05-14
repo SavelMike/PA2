@@ -5,7 +5,17 @@
 // Used to try if next char is ( or ) 
 bool CLexer::isparenthesis(char p)
 {
-	m_last = cin.get();
+	// Skip leading spaces
+	while (1) {
+		char c = cin.get();
+		if (c == ' ') {
+			continue;
+		}
+		else {
+			m_last = c;
+			break;
+		}
+	}
 	if (m_last == p)
 		return true;
 	cin.putback(m_last);
@@ -18,6 +28,17 @@ CNumber CLexer::number()
 {
 	int res = 0;
 	
+	// Skip leading whitespaces 
+	while(1) {
+		char c = cin.get();
+		if (c == ' ') {
+			continue;
+		}
+		else {
+			cin.putback(c);
+			break;
+		}
+	}
 	while(1) {
 		char c = cin.get();
 		if (c >= '0' && c <= '9') {
@@ -35,7 +56,17 @@ CNumber CLexer::number()
 // Reads next char from input, return COperation corresponding to read char, CMul or CDef or CMod
 COperation* CLexer::factorop()
 {
-	m_last = cin.get();
+	// Skip leading spaces
+	while (1) {
+		char c = cin.get();
+		if (c == ' ') {
+			continue;
+		}
+		else {
+			m_last = c;
+			break;
+		}
+	}
 
 	switch (m_last) {
 	case '*':
@@ -53,7 +84,17 @@ COperation* CLexer::factorop()
 // Reads next char from input, return COperation corresponding to read char, CAdd or CSub
 COperation* CLexer::exprop()
 {
-	m_last = cin.get();
+	// Skip leading spaces
+	while (1) {
+		char c = cin.get();
+		if (c == ' ') {
+			continue;
+		}
+		else {
+			m_last = c;
+			break;
+		}
+	}
 
 	switch (m_last) {
 	case '+':
