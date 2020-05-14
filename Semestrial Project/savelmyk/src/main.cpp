@@ -3,6 +3,7 @@
 #include "CNumber.h"
 #include "COperation.h"
 #include "CLexer.h"
+#include <string>
 
 CNumber expr(CLexer& lex);
 
@@ -51,16 +52,58 @@ CNumber expr(CLexer& lex)
 	return res;
 }
 
+void admin_commands()
+{
+	string str;
+	getline(cin, str);
+	if (str == "quit") {
+		exit(0);
+	}
+	if (str != "help" && str != "load" && str != "save") {
+		cout << str << " - unknown command" << endl;
+	}
+	else {
+		cout << str << " - command is not ready" << endl;
+	}
+}
+
+void set_var()
+{
+	string str;
+	getline(cin, str);
+	cout << "set_var is not ready" << endl;
+	// cin.get(); // Get '\n'
+}
+
 int main()
 {
 	CLexer lex;
 	
-	try {
-		cout << "enter expression: " << endl;
-		cout << expr(lex) << endl;
-	}
-	catch (const char* str) {
-		cout << str << endl;
+	while (1) {
+		cin.clear();
+		cout << "Enter expression or command:" << endl;
+		try {
+			char c = cin.get();
+			if (c == ':') {
+				// :quit, :save, :load, :help
+				admin_commands();
+			}
+			else if (isalpha(c)) {
+				// Set variable
+				cin.putback(c);
+				set_var();
+			}
+			else {
+				// Execute expression
+				cin.putback(c);
+				cout << expr(lex) << endl;
+				// \n was put back to c, get it again
+				cin.get();
+			}
+		}
+		catch (const char* str) {
+			cout << str << endl;
+		}
 	}
 	return 0;
 }

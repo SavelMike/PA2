@@ -49,10 +49,10 @@ CNumber CLexer::number()
 		}
 		else
 		{
-			cin.putback(c);
 			if (ndigits == 0) {
 				throw "Number is not found";
 			}
+			cin.putback(c);
 			break;
 		}
 	}
