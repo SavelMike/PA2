@@ -83,8 +83,9 @@ COperation* CLexer::factorop()
 		return new CMod();
 	default:
 		cin.putback(m_last);
+		break;
 	}
-	return new CNone();
+	return nullptr;
 }
 
 // Reads next char from input, return COperation corresponding to read char, CAdd or CSub
@@ -109,6 +110,7 @@ COperation* CLexer::exprop()
 		return new CSub();
 	default:
 		cin.putback(m_last);
-		return new CNone();
+		break;
 	}
+	return nullptr;
 }

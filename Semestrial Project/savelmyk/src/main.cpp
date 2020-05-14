@@ -21,9 +21,8 @@ CNumber factor(CLexer& lex)
 	}
 
 	COperation* op = lex.factorop();
-	if (!(op->isFactor())) {
+	if (op == nullptr) {
 		// Nor multiply, division or remainder of division
-		delete op;
 		return v1;
 	}
 	CNumber v2 = factor(lex);
@@ -39,9 +38,8 @@ CNumber expr(CLexer& lex)
 {
 	CNumber v1 = factor(lex);
 	COperation* op = lex.exprop();
-	if (!(op->isExpr())) {
+	if (op == nullptr) {
 		// Op is not plus and not minus
-		delete op;
 		return v1;
 	}
 	CNumber v2 = expr(lex);
