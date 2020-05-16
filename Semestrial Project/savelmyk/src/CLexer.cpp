@@ -22,14 +22,16 @@ bool CLexer::isparenthesis(char p)
 	return false;
 }
 
-// Reads input char by char until input is valid decimal number, i.e. 123.456E789
+// Reads input char by char until input is valid decimal number, i.e.
+//		123456789 -> mantissa: 123456789, exp 9
+//		1234.56789 -> mantissa: 123456789, exp 4
+//		1.234E56789 -> mantissa: 1234, exp 56790
 // Store mantissa and exponent to member variables of CNumber
+
 CNumber CLexer::number()
-{
-	int res = 0;
-	
+{	
 	// Skip leading whitespaces 
-	while(1) {
+	while (1) {
 		char c = cin.get();
 		if (c == ' ') {
 			continue;
@@ -40,23 +42,66 @@ CNumber CLexer::number()
 		}
 	}
 	
-	int ndigits = 0;
-	while(1) {
+	CNumber num;
+	
+	bool seenDot = false;
+	bool seenE = false;
+	bool seenMinus = false;
+	long long exp = 0;
+	
+	while (1) {
 		char c = cin.get();
 		if (c >= '0' && c <= '9') {
-			res = res * 10 + c - '0';
-			ndigits++;
-		}
-		else
-		{
-			if (ndigits == 0) {
-				throw "Number is not found";
+			if (seenE) {
+				num.append_exponent(c - '0');
+				continue;
 			}
-			cin.putback(c);
-			break;
+			num.append_mantissa(c - '0');
+			if (!seenDot) {
+				exp++;
+			}
+			num.set_valid();
+			continue;
 		}
+		if (c == '.') {
+			if (seenDot || seenE) {
+				throw "Syntax error";
+			}
+			seenDot = true;
+			continue;
+		}
+		if (c == 'E' || c == 'e') {
+			if (seenE) {
+				throw "Syntax error";
+			}
+			seenE = true;
+			continue;
+		}
+		if (c == '-') {
+			if (seenMinus) {
+				throw "Syntax error";
+			}
+			seenMinus = true;
+			if (!seenE) {
+				cin.putback(c);
+				num.increment_exp(exp);
+				break;
+			}
+			if (num.exponent_length() != 0) {
+				throw "Syntax error";
+			}
+			continue;
+		}
+		// Unacceptable char
+		if (num.isinvalid()) {
+			throw "Number is not found";
+		}
+		cin.putback(c);
+		num.increment_exp(exp);
+		break;
 	}
-	return CNumber(res);
+	
+	return num;
 }
 
 // Reads next char from input, return COperation corresponding to read char, CMul or CDef or CMod
