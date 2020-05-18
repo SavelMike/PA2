@@ -9,18 +9,27 @@
 
 using namespace std;
 
-class CBigUnsigned
+class CBigInt
 {
 public:
-	CBigUnsigned() { ; }
-
+	CBigInt(): m_data(), m_positive(true) { ; }
+	CBigInt(unsigned char val) :m_data(), m_positive(true) { m_data.push_back(val); }  // Value should be from 0 to 9
 	// +=
-	CBigUnsigned& operator+=(long long exp);
-	void append_dig(int digit) { m_data.push_back(digit); }
-	int length() { return m_data.size(); }
-	friend ostream& operator <<(ostream& os, const CBigUnsigned& num);
+	CBigInt& operator+=(const CBigInt& diff);
+	// -=
+	CBigInt& operator-=(const CBigInt& diff);
+	// <
+	bool operator<(const CBigInt& a2) const;
+	void tail_append(unsigned char digit) { m_data.push_back(digit); }
+	void head_insert(unsigned char digit) { m_data.push_front(digit); }
+	int length() const { return m_data.size(); }
+	void set_negative() { m_positive = false; }
+	void set_positive() { m_positive = true; }
+	const deque<unsigned char>& get_data() const { return m_data; } 
+	friend ostream& operator <<(ostream& os, const CBigInt& num);
 private:
 	deque<unsigned char> m_data;
+	bool m_positive;
 };
 
 class CNumber {
@@ -29,8 +38,8 @@ private:
 	bool m_positive;
 	// Sign of exponent
 	bool m_exppositive;
-	CBigUnsigned m_Mantissa;
-	CBigUnsigned m_Exp;
+	CBigInt m_Mantissa;
+	CBigInt m_Exp;
 public:
 	CNumber() :m_Invalid(true), m_positive(true), m_exppositive(true) {}
 	bool isinvalid() { return this->m_Invalid; }
@@ -43,7 +52,8 @@ public:
 	void append_mantissa(int digit);
 	void append_exponent(int digit);
 	int exponent_length() { return this->m_Exp.length(); }
-	void increment_exp(long long exp);
+	void increment_exp(const CBigInt& exp);
+	void set_expsign(bool sign) { m_exppositive = sign; }
 	friend ostream& operator <<(ostream& os, const CNumber& num);
 };
 #endif

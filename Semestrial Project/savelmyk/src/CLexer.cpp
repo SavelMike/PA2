@@ -45,61 +45,65 @@ CNumber CLexer::number()
 	CNumber num;
 	
 	bool seenDot = false;
-	bool seenE = false;
-	bool seenMinus = false;
-	long long exp = 0;
+	bool zeroes_only = true;
+	CBigInt exp(0);
 	
+	// Cycle for mantissa
+	char c;
 	while (1) {
-		char c = cin.get();
-		if (c >= '0' && c <= '9') {
-			if (seenE) {
-				num.append_exponent(c - '0');
+	    c = cin.get();
+		if (isdigit(c)) {
+			num.append_mantissa(c - '0');
+			num.set_valid();
+			if (c == '0' && zeroes_only && seenDot) {
+				exp -= CBigInt(1);
 				continue;
 			}
-			num.append_mantissa(c - '0');
-			if (!seenDot) {
-				exp++;
+			if (c != '0') {
+				zeroes_only = false;
 			}
-			num.set_valid();
+			if (!seenDot && !zeroes_only) {
+				exp += CBigInt(1);
+			}
 			continue;
 		}
 		if (c == '.') {
-			if (seenDot || seenE) {
+			if (seenDot) {
 				throw "Syntax error";
 			}
 			seenDot = true;
 			continue;
 		}
-		if (c == 'E' || c == 'e') {
-			if (seenE) {
-				throw "Syntax error";
-			}
-			seenE = true;
-			continue;
-		}
-		if (c == '-') {
-			if (seenMinus) {
-				throw "Syntax error";
-			}
-			seenMinus = true;
-			if (!seenE) {
-				cin.putback(c);
-				num.increment_exp(exp);
-				break;
-			}
-			if (num.exponent_length() != 0) {
-				throw "Syntax error";
-			}
-			continue;
-		}
-		// Unacceptable char
-		if (num.isinvalid()) {
-			throw "Number is not found";
-		}
-		cin.putback(c);
-		num.increment_exp(exp);
 		break;
 	}
+	
+	if (c != 'E' && c != 'e') {
+		num.increment_exp(exp);
+		cin.putback(c);
+		return num;
+	}
+	c = cin.get();
+	if (c == '-') {
+		num.set_expsign(false);
+	} else if (c == '+') {
+		num.set_expsign(true);
+	} else if (!isdigit(c)) {
+		throw "Syntax error";
+	} else {
+		num.append_exponent(c - '0');
+	}
+	
+	while (1) {
+		c = cin.get();
+		if (isdigit(c)) {
+			num.append_exponent(c - '0');
+			continue;
+		}
+		cin.putback(c);
+		break;
+	}
+
+	num.increment_exp(exp);
 	
 	return num;
 }
