@@ -25,6 +25,8 @@ public:
 	int length() const { return m_data.size(); }
 	void set_negative() { m_positive = false; }
 	void set_positive() { m_positive = true; }
+	void set_sign(bool sign) { m_positive = sign; }
+	bool get_sign() const { return m_positive; } 
 	const deque<unsigned char>& get_data() const { return m_data; } 
 	friend ostream& operator <<(ostream& os, const CBigInt& num);
 private:
@@ -36,14 +38,12 @@ class CNumber {
 private:
 	bool m_Invalid;
 	bool m_positive;
-	// Sign of exponent
-	bool m_exppositive;
 	CBigInt m_Mantissa;
 	CBigInt m_Exp;
 public:
-	CNumber() :m_Invalid(true), m_positive(true), m_exppositive(true) {}
-	bool isinvalid() { return this->m_Invalid; }
-	void set_valid() { this->m_Invalid = false; }
+	CNumber() :m_Invalid(true), m_positive(true) {}
+	bool isinvalid() { return m_Invalid; }
+	void set_valid() { m_Invalid = false; }
 	CNumber operator +(const CNumber&) const;
 	CNumber operator -(const CNumber&) const;
 	CNumber operator *(const CNumber&) const;
@@ -51,9 +51,9 @@ public:
 	CNumber operator %(const CNumber&) const;
 	void append_mantissa(int digit);
 	void append_exponent(int digit);
-	int exponent_length() { return this->m_Exp.length(); }
+	int exponent_length() { return m_Exp.length(); }
 	void increment_exp(const CBigInt& exp);
-	void set_expsign(bool sign) { m_exppositive = sign; }
+	void set_expsign(bool sign) { m_Exp.set_sign(sign); }
 	friend ostream& operator <<(ostream& os, const CNumber& num);
 };
 #endif

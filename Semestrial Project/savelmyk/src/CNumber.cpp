@@ -9,8 +9,10 @@ static CBigInt add(const CBigInt& v1, const CBigInt& v2)
 	int carry = 0;
 
 	CBigInt res;
-	deque<unsigned char>::reverse_iterator ad1 = v1.get_data().rbegin();
-	deque<unsigned char>::reverse_iterator ad2 = v2.get_data().rbegin();
+
+	res.set_sign(v1.get_sign());
+	deque<unsigned char>::const_reverse_iterator ad1 = v1.get_data().rbegin();
+	deque<unsigned char>::const_reverse_iterator ad2 = v2.get_data().rbegin();
 
 	for (; ad1 != v1.get_data().rend() || ad2 != v2.get_data().rend(); ) {
 		unsigned char sum;
@@ -24,7 +26,7 @@ static CBigInt add(const CBigInt& v1, const CBigInt& v2)
 			s1 = *ad1;
 			ad1++;
 		}
-		if (ad2 == v2.get_data.rend()) {
+		if (ad2 == v2.get_data().rend()) {
 			s2 = 0;
 		}
 		else {
@@ -45,38 +47,60 @@ static CBigInt add(const CBigInt& v1, const CBigInt& v2)
 
 static CBigInt sub(const CBigInt& v1, const CBigInt& v2)
 {
-	int carry = 0;
+	deque<unsigned char>::const_reverse_iterator minuend;
+	deque<unsigned char>::const_reverse_iterator subtrahend;
+	deque<unsigned char>::const_reverse_iterator endup;
+	deque<unsigned char>::const_reverse_iterator enddown;
+	bool sign;
+
+	if (v1 < v2) {
+		if (v1.get_sign() == v2.get_sign()) {
+			sign = !v2.get_sign();
+		}
+		else {
+			sign = v2.get_sign();
+		}
+		minuend = v2.get_data().rbegin();
+		subtrahend = v1.get_data().rbegin();
+		endup = v2.get_data().rend();
+		enddown = v1.get_data().rend();
+	}
+	else {
+		sign = v1.get_sign();
+		minuend = v1.get_data().rbegin(); 
+		subtrahend = v2.get_data().rbegin();
+		endup = v1.get_data().rend();
+		enddown = v2.get_data().rend();
+	}
 
 	CBigInt res;
-	deque<unsigned char>::reverse_iterator ad1 = v1.get_data().rbegin();
-	deque<unsigned char>::reverse_iterator ad2 = v2.get_data().rbegin();
 
-	for (; ad1 != v1.get_data().rend() || ad2 != v2.get_data().rend(); ) {
-		unsigned char sum;
+	res.set_sign(sign);
+	int carry1 = 0;
+	int carry2 = 0;
+	
+	for (; minuend != endup; ) {
+		unsigned char dif;
 		unsigned char s1;
 		unsigned char s2;
 
-		if (ad1 == v1.get_data().rend()) {
-			s1 = 0;
-		}
-		else {
-			s1 = *ad1;
-			ad1++;
-		}
-		if (ad2 == v2.get_data.rend()) {
+		s1 = *minuend;
+		minuend++;
+		
+		if (subtrahend == enddown) {
 			s2 = 0;
 		}
 		else {
-			s2 = *ad2;
-			ad2++;
+			s2 = *subtrahend;
+			subtrahend++;
 		}
-		sum = s1 + s2 + carry;
-		carry = sum / 10;
-		sum = sum % 10;
-		res.head_insert(sum);
-	}
-	if (carry != 0) {
-		res.head_insert(carry);
+		if (s1 < s2) {
+			s1 += 10;
+			carry2 = 1;
+		}
+		dif = s1 - s2 - carry1;
+		carry1 = carry2;
+		res.head_insert(dif);
 	}
 
 	return res;
@@ -86,73 +110,58 @@ CBigInt& CBigInt::operator+=(const CBigInt& diff)
 {
 	if (this->m_positive == diff.m_positive) {
 		*this = add(*this, diff);
-		diff.m_positive ? this->set_positive() : this->set_negative();
 	}
 	else {
 		*this = sub(*this, diff);
 	}
+	return *this;
+}
+
+CBigInt& CBigInt::operator-=(const CBigInt& diff)
+{
+	if (this->m_positive == diff.m_positive) {
+		*this = sub(*this, diff);
+	}
+	else {
+		*this = add(*this, diff);
+	}
+
+	return *this;
 }
 
 bool CBigInt::operator<(const CBigInt& a) const
 {
-
-	if (this->length() > a.length()) {
+	CBigInt res;
+	deque<unsigned char>::const_iterator i1 = this->m_data.begin();
+	deque<unsigned char>::const_iterator i2 = a.m_data.begin();
+	
+	while (i1 != this->m_data.end() && *i1 == 0) {
+		i1++;
+	}
+	int l1 = this->m_data.end() - i1;
+	
+	while (i2 != a.m_data.end() && *i2 == 0) {
+		i2++;
+	}
+	int l2 = a.m_data.end() - i2;
+	
+	if (l1 > l2) {
 		return false;
 	}
-	if (this->length() < a.length()) {
+	if (l1 < l2) {
 		return true;
 	}
-
-	deque<unsigned char>::reverse_iterator ad1 = this->get_data().begin();
-	deque<unsigned char>::reverse_iterator ad2 = a.get_data().begin();
-	for (; ad1 != this->get_data().end(); ad1++, ad2++) {
-		if (*ad1 < *ad2) {
+	for (; i1 != this->m_data.end(); i1++, i2++) {
+		if (*i1 < *i2) {
 			return true;
+		}
+		if (*i1 > *i2) {
+			return false;
 		}
 	}
 	return false;
 }
 
-CBigInt& CBigInt::operator-=(lo exp)
-{
-	int carry = 0;
-	// Exp is less than zero
-	string s = to_string(-exp);
-
-	deque<unsigned char> res;
-	deque<unsigned char>::reverse_iterator ad1 = this->m_data.rbegin();
-	string::reverse_iterator ad2 = s.rbegin();
-	for (; ad1 != this->m_data.rend() || ad2 != s.rend();) {
-		unsigned char sum;
-		char s1;
-		char s2;
-
-		if (ad1 == this->m_data.rend()) {
-			s1 = 0;
-		}
-		else {
-			s1 = *ad1;
-			ad1++;
-		}
-		if (ad2 == s.rend()) {
-			s2 = '0';
-		}
-		else {
-			s2 = *ad2;
-			ad2++;
-		}
-		sum = s1 + s2 - '0' + carry;
-		carry = sum / 10;
-		sum = sum % 10;
-		res.push_front(sum);
-	}
-	if (carry != 0) {
-		res.push_front(carry);
-	}
-	this->m_data = res;
-
-	return *this;
-}
 
 ostream& operator <<(ostream& os, const CBigInt& num)
 {
@@ -190,12 +199,12 @@ CNumber CNumber::operator %(const CNumber& a2) const
 
 void CNumber::append_mantissa(int digit)
 {
-	this->m_Mantissa.append_dig(digit);
+	this->m_Mantissa.tail_append(digit);
 }
 
 void CNumber::append_exponent(int digit)
 {
-	this->m_Exp.append_dig(digit);
+	this->m_Exp.tail_append(digit);
 }
 
 void CNumber::increment_exp(const CBigInt& exp)
@@ -206,6 +215,6 @@ void CNumber::increment_exp(const CBigInt& exp)
 ostream& operator <<(ostream& os, const CNumber& num)
 {
 	os << "Mantissa: " << num.m_Mantissa << endl; 
-	os << "Exponent: " << (num.m_exppositive ? '+' : '-') << num.m_Exp << endl;
+	os << "Exponent: " << (num.m_Exp.get_sign() ? '+' : '-') << num.m_Exp << endl;
 	return os;
 }
