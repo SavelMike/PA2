@@ -3,6 +3,7 @@
 #include "CNumber.h"
 #include <string>
 #include <iterator>
+#include <cassert>
 
 static CBigInt add(const CBigInt& v1, const CBigInt& v2)
 {
@@ -94,7 +95,8 @@ static CBigInt sub(const CBigInt& v1, const CBigInt& v2)
 			s2 = *subtrahend;
 			subtrahend++;
 		}
-		if (s1 < s2) {
+		carry2 = 0;
+		if (s1 < (s2 + carry1)) {
 			s1 += 10;
 			carry2 = 1;
 		}
@@ -162,6 +164,37 @@ bool CBigInt::operator<(const CBigInt& a) const
 	return false;
 }
 
+void CBigInt::remove_leading_zeroes()
+{
+	if (this->m_data.size() == 0) {
+		cout << "Empty deque" << endl;
+		exit(1);
+	}
+	
+	while (1) {
+		if (this->m_data[0] == 0 && this->m_data.size() > 1) {
+			this->m_data.pop_front();
+			continue;
+		}
+		break;
+	}
+}
+
+void CBigInt::remove_tailing_zeroes()
+{
+	if (this->m_data.size() == 0) {
+		cout << "Empty deque" << endl;
+		exit(1);
+	}
+	
+	while (1) {
+		if (this->m_data[this->m_data.size() - 1] == 0 && this->m_data.size() > 1) {
+			this->m_data.pop_back();
+			continue;
+		}
+		break;
+	}
+}
 
 ostream& operator <<(ostream& os, const CBigInt& num)
 {
@@ -210,6 +243,13 @@ void CNumber::append_exponent(int digit)
 void CNumber::increment_exp(const CBigInt& exp)
 {
 	this->m_Exp += exp;
+}
+
+void CNumber::remove_zeroes()
+{
+	this->m_Mantissa.remove_leading_zeroes();
+	this->m_Mantissa.remove_tailing_zeroes();
+	this->m_Exp.remove_leading_zeroes();
 }
 
 ostream& operator <<(ostream& os, const CNumber& num)

@@ -79,7 +79,9 @@ CNumber CLexer::number()
 	
 	if (c != 'E' && c != 'e') {
 		num.increment_exp(exp);
+		num.remove_zeroes();
 		cin.putback(c);
+		cout << num << endl;
 		return num;
 	}
 	c = cin.get();
@@ -104,6 +106,9 @@ CNumber CLexer::number()
 	}
 
 	num.increment_exp(exp);
+	num.remove_zeroes();
+
+	cout << num << endl;
 	
 	return num;
 }

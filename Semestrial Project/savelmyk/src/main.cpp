@@ -96,7 +96,7 @@ int main()
 			else {
 				// Execute expression
 				cin.putback(c);
-				cout << expr(lex) << endl;
+				cout << "Result of expression: " << expr(lex) << endl;
 				// \n was put back to c, get it again
 				cin.get();
 			}

@@ -26,7 +26,9 @@ public:
 	void set_negative() { m_positive = false; }
 	void set_positive() { m_positive = true; }
 	void set_sign(bool sign) { m_positive = sign; }
-	bool get_sign() const { return m_positive; } 
+	bool get_sign() const { return m_positive; }
+	void remove_leading_zeroes();
+	void remove_tailing_zeroes();
 	const deque<unsigned char>& get_data() const { return m_data; } 
 	friend ostream& operator <<(ostream& os, const CBigInt& num);
 private:
@@ -54,6 +56,7 @@ public:
 	int exponent_length() { return m_Exp.length(); }
 	void increment_exp(const CBigInt& exp);
 	void set_expsign(bool sign) { m_Exp.set_sign(sign); }
+	void remove_zeroes();
 	friend ostream& operator <<(ostream& os, const CNumber& num);
 };
 #endif
