@@ -131,6 +131,38 @@ CBigInt& CBigInt::operator-=(const CBigInt& diff)
 	return *this;
 }
 
+CBigInt CBigInt::operator*(const CBigInt& multiplier) const
+{
+	unsigned char z;
+	unsigned char rem;
+	unsigned char quotient = 0;
+	CBigInt res;
+	int c = 0;
+	deque<unsigned char>::const_reverse_iterator i1 = this->m_data.rbegin();
+	
+	for (; i1 != this->m_data.rend(); i1++) {
+		CBigInt tmpres;
+		for (int i = 0; i < c; i++) {
+			tmpres.head_insert(0);
+		}
+		c++;
+		deque<unsigned char>::const_reverse_iterator i2 = multiplier.m_data.rbegin();
+		for (; i2 != multiplier.m_data.rend(); i2++) {
+			z = *i1 * *i2 + quotient;
+			quotient = z / 10;
+			rem = z % 10;
+			tmpres.head_insert(rem);
+		}
+		if (quotient != 0) {
+			tmpres.head_insert(quotient);
+		}
+		res += tmpres;
+	}
+	
+	res.set_sign(this->get_sign() == multiplier.get_sign());
+	return res;
+}
+
 bool CBigInt::operator<(const CBigInt& a) const
 {
 	CBigInt res;
@@ -217,7 +249,15 @@ CNumber CNumber::operator -(const CNumber& a2) const
 
 CNumber CNumber::operator *(const CNumber& a2) const 
 { 
-	return CNumber(); 
+	CNumber res;
+
+	res.m_Exp = this->m_Exp;
+	res.m_Exp += a2.m_Exp;
+	
+	res.m_Mantissa = this->m_Mantissa * a2.m_Mantissa;
+	res.m_Exp -= CBigInt(this->m_Mantissa.length() + a2.m_Mantissa.length() - res.m_Mantissa.length());
+	
+	return res; 
 }
 
 CNumber CNumber::operator /(const CNumber& a2) const 

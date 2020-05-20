@@ -18,6 +18,8 @@ public:
 	CBigInt& operator+=(const CBigInt& diff);
 	// -=
 	CBigInt& operator-=(const CBigInt& diff);
+	// *
+	CBigInt operator*(const CBigInt& multiplier) const;
 	// <
 	bool operator<(const CBigInt& a2) const;
 	void tail_append(unsigned char digit) { m_data.push_back(digit); }
