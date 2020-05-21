@@ -5,6 +5,19 @@
 #include <iterator>
 #include <cassert>
 
+CBigInt::CBigInt(int val)
+{
+	this->m_positive = (val >= 0);
+	while (1) {
+		int rem = val % 10;
+		val /= 10;
+		this->m_data.push_front(rem);
+		if (val == 0) {
+			break;
+		}
+	}
+}
+
 static CBigInt add(const CBigInt& v1, const CBigInt& v2)
 {
 	int carry = 0;
@@ -229,6 +242,25 @@ void CBigInt::remove_tailing_zeroes()
 	}
 }
 
+int CBigInt::toInt() const
+{
+	if (this->m_data.size() > 9) {
+		cout << "Too big number." << endl;
+		exit(1);
+	}
+	deque<unsigned char>::const_reverse_iterator it;
+	int res = 0;
+	int power10 = 1;
+
+	it = this->m_data.rbegin();
+	for (; it != this->m_data.rend(); it++) {
+		res += power10 * *it;
+		power10 *= 10;
+	}
+
+	return res;
+}
+
 ostream& operator <<(ostream& os, const CBigInt& num)
 {
 	for (auto x : num.m_data) {
@@ -295,7 +327,36 @@ void CNumber::remove_zeroes()
 
 ostream& operator <<(ostream& os, const CNumber& num)
 {
-	os << "Mantissa: " << num.m_Mantissa << endl; 
-	os << "Exponent: " << (num.m_Exp.get_sign() ? '+' : '-') << num.m_Exp << endl;
+	if (!num.m_Mantissa.get_sign()) {
+		os << "-";
+	}
+	if (!num.m_Exp.get_sign()) {
+		// Negative exponent
+		os << "0.";
+		if (num.m_Exp < CBigInt(255)) {
+			int n = num.m_Exp.toInt();
+			os << string(n, '0') << num.m_Mantissa;
+		}
+		else {
+			os << num.m_Mantissa << 'E' << (num.m_Exp.get_sign() ? "+" : "-") << num.m_Exp;
+		}
+	}
+	else {
+		// Positive exponent
+		int n = num.m_Exp.toInt();
+		int pos = 0;
+		for (auto x : num.m_Mantissa.get_data()) {
+			x += '0';
+			os << x;
+			pos++;
+			if (pos == n && num.m_Mantissa.length() > n) {
+				os << ".";
+			}
+		}
+		if (n > pos) {
+			os << string(n - pos, '0');
+		}
+	}
+
 	return os;
 }

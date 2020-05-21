@@ -13,7 +13,7 @@ class CBigInt
 {
 public:
 	CBigInt(): m_data(), m_positive(true) { ; }
-	CBigInt(unsigned char val) :m_data(), m_positive(true) { m_data.push_back(val); }  // Value should be from 0 to 9
+	CBigInt(int val);
 	// +=
 	CBigInt& operator+=(const CBigInt& diff);
 	// -=
@@ -31,7 +31,8 @@ public:
 	bool get_sign() const { return m_positive; }
 	void remove_leading_zeroes();
 	void remove_tailing_zeroes();
-	const deque<unsigned char>& get_data() const { return m_data; } 
+	const deque<unsigned char>& get_data() const { return m_data; }
+	int toInt() const;
 	friend ostream& operator <<(ostream& os, const CBigInt& num);
 private:
 	deque<unsigned char> m_data;

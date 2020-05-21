@@ -81,9 +81,9 @@ CNumber CLexer::number()
 		num.increment_exp(exp);
 		num.remove_zeroes();
 		cin.putback(c);
-		cout << num << endl;
 		return num;
 	}
+
 	c = cin.get();
 	if (c == '-') {
 		num.set_expsign(false);
@@ -107,8 +107,6 @@ CNumber CLexer::number()
 
 	num.increment_exp(exp);
 	num.remove_zeroes();
-
-	cout << num << endl;
 	
 	return num;
 }
