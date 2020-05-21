@@ -146,6 +146,7 @@ CBigInt CBigInt::operator*(const CBigInt& multiplier) const
 			tmpres.head_insert(0);
 		}
 		c++;
+		quotient = 0;
 		deque<unsigned char>::const_reverse_iterator i2 = multiplier.m_data.rbegin();
 		for (; i2 != multiplier.m_data.rend(); i2++) {
 			z = *i1 * *i2 + quotient;
