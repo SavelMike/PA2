@@ -79,7 +79,7 @@ int main()
 {
 	CLexer lex;
 	
-	while (1) {
+	while (!cin.eof()) {
 		
 		cout << "Enter expression or command:" << endl;
 		try {
