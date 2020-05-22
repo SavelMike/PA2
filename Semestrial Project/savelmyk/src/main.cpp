@@ -80,7 +80,7 @@ int main()
 	CLexer lex;
 	
 	while (1) {
-		cin.clear();
+		
 		cout << "Enter expression or command:" << endl;
 		try {
 			char c = cin.get();
@@ -98,11 +98,13 @@ int main()
 				cin.putback(c);
 				cout << "Result of expression: " << expr(lex) << endl;
 				// \n was put back to c, get it again
-				cin.get();
+//				cin.get();
 			}
 		}
 		catch (const char* str) {
 			cout << str << endl;
+			string s;
+			getline(cin, s);
 		}
 	}
 	return 0;

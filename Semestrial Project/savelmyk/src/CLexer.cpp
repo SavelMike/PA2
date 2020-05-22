@@ -78,9 +78,10 @@ CNumber CLexer::number()
 	}
 	
 	if (c != 'E' && c != 'e') {
+		cin.putback(c);
 		num.increment_exp(exp);
 		num.remove_zeroes();
-		cin.putback(c);
+
 		return num;
 	}
 
@@ -160,8 +161,11 @@ COperation* CLexer::exprop()
 		return new CAdd();
 	case '-':
 		return new CSub();
+	case '\n':
+		break;
 	default:
-		cin.putback(m_last);
+//		cin.putback(m_last);
+		throw "syntax error";
 		break;
 	}
 	return nullptr;

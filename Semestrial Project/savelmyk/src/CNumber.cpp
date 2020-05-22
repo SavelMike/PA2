@@ -213,8 +213,7 @@ bool CBigInt::operator<(const CBigInt& a) const
 void CBigInt::remove_leading_zeroes()
 {
 	if (this->m_data.size() == 0) {
-		cout << "Empty deque" << endl;
-		exit(1);
+		throw "Not a number";
 	}
 	
 	while (1) {
