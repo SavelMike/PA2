@@ -79,12 +79,12 @@ int main()
 {
 	CLexer lex;
 	
-	while (1) {
-		
+	while (1) {	
 		cerr << "Enter expression or command:" << endl;
 		try {
 			char c;
-		        if (!cin.get(c)) {
+		    if (!cin.get(c)) {
+				// End of input stream
 				break;
 			}
 			if (c == ':') {
