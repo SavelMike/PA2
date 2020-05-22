@@ -79,11 +79,14 @@ int main()
 {
 	CLexer lex;
 	
-	while (!cin.eof()) {
+	while (1) {
 		
 		cerr << "Enter expression or command:" << endl;
 		try {
-			char c = cin.get();
+			char c;
+		        if (!cin.get(c)) {
+				break;
+			}
 			if (c == ':') {
 				// :quit, :save, :load, :help
 				admin_commands();
