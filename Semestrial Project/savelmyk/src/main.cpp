@@ -81,7 +81,7 @@ int main()
 	
 	while (!cin.eof()) {
 		
-		cout << "Enter expression or command:" << endl;
+		cerr << "Enter expression or command:" << endl;
 		try {
 			char c = cin.get();
 			if (c == ':') {
@@ -96,9 +96,8 @@ int main()
 			else {
 				// Execute expression
 				cin.putback(c);
-				cout << "Result of expression: " << expr(lex) << endl;
-				// \n was put back to c, get it again
-//				cin.get();
+				cerr << "Result of expression: "; 
+				cout << expr(lex) << endl;
 			}
 		}
 		catch (const char* str) {
