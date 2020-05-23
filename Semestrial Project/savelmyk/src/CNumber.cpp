@@ -59,6 +59,54 @@ static CBigInt add(const CBigInt& v1, const CBigInt& v2)
 	return res;
 }
 
+// This function sums v1 and v2. These are alligned by highest digit, etc: 
+// 1234567
+// 89
+// Assuming 89 is in fact 8900000
+static CBigInt add2(const CBigInt& v1, const CBigInt& v2)
+{
+	deque<unsigned char>::const_reverse_iterator i1;
+	deque<unsigned char>::const_reverse_iterator i1end;
+	deque<unsigned char>::const_reverse_iterator i2;
+	int nzeroes;
+	CBigInt res;
+	int carry = 0;
+
+	if (v1.get_data().size() < v2.get_data().size()) {
+		i1 = v2.get_data().rbegin();
+		i1end = v2.get_data().rend();
+		nzeroes = v2.get_data().size() - v1.get_data().size();
+		i2 = v1.get_data().rbegin();
+	}
+	else {
+		i1 = v1.get_data().rbegin();
+		i1end = v1.get_data().rend();
+		nzeroes = v1.get_data().size() - v2.get_data().size();
+		i2 = v2.get_data().rbegin();
+	}
+
+	for (; i1 != i1end; i1++) {
+		unsigned char a1 = *i1;
+		unsigned char a2;
+		if (nzeroes > 0) {
+			a2 = 0;
+			nzeroes--;
+		}
+		else {
+			a2 = *i2;
+			i2++;
+		}
+		unsigned char sum = a1 + a2 + carry;
+		res.head_insert(sum % 10);
+		carry = sum / 10;
+	}
+	if (carry != 0) {
+		res.head_insert(carry);
+	}
+	
+	return res;
+}
+
 static CBigInt sub(const CBigInt& v1, const CBigInt& v2)
 {
 	deque<unsigned char>::const_reverse_iterator minuend;
@@ -142,6 +190,16 @@ CBigInt& CBigInt::operator-=(const CBigInt& diff)
 	}
 
 	return *this;
+}
+
+CBigInt CBigInt::operator+(const CBigInt& add2) const
+{
+	return add(*this, add2);
+}
+
+CBigInt CBigInt::operator-(const CBigInt& sub2) const
+{ 
+	return sub(*this, sub2);
 }
 
 CBigInt CBigInt::operator*(const CBigInt& multiplier) const
@@ -271,11 +329,32 @@ ostream& operator <<(ostream& os, const CBigInt& num)
 
 CNumber CNumber::operator +(const CNumber& a2) const 
 {
-	return CNumber();
+	CNumber res;
+	CNumber addendum1; // Addendum with smaller exponent
+	const CNumber *addendum2;
+	CBigInt nzeroes;
+
+	// Make exponent
+	if (this->m_Exp < a2.m_Exp) {
+		addendum1 = *this;
+		addendum2 = &a2;
+		nzeroes = a2.m_Exp - this->m_Exp;
+	}
+	else {
+		addendum1 = a2;
+		addendum2 = this;
+		nzeroes = this->m_Exp - a2.m_Exp;
+	}
+	for (CBigInt i(0); i < nzeroes; i += CBigInt(1)) {
+		addendum1.m_Mantissa.head_insert('0');
+	}
+	res.m_Mantissa = add2(addendum1.m_Mantissa, addendum2->m_Mantissa);
+
+	return res;
 }
 
 CNumber CNumber::operator -(const CNumber& a2) const 
-{ 
+{
 	return CNumber(); 
 }
 

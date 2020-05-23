@@ -18,6 +18,10 @@ public:
 	CBigInt& operator+=(const CBigInt& diff);
 	// -=
 	CBigInt& operator-=(const CBigInt& diff);
+	// +
+	CBigInt operator+(const CBigInt& add2) const;
+	// -
+	CBigInt operator-(const CBigInt& sub2) const;
 	// *
 	CBigInt operator*(const CBigInt& multiplier) const;
 	// <
