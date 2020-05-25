@@ -79,7 +79,7 @@ CNumber CLexer::number()
 	
 	if (c != 'E' && c != 'e') {
 		cin.putback(c);
-		num.increment_exp(exp);
+		num.set_exponent(exp);
 		num.remove_zeroes();
 
 		return num;

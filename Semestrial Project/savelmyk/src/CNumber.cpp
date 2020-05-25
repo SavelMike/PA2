@@ -8,6 +8,9 @@
 CBigInt::CBigInt(int val)
 {
 	this->m_positive = (val >= 0);
+	if (val < 0) {
+		val *= (-1);
+	}
 	while (1) {
 		int rem = val % 10;
 		val /= 10;
@@ -194,12 +197,18 @@ CBigInt& CBigInt::operator-=(const CBigInt& diff)
 
 CBigInt CBigInt::operator+(const CBigInt& add2) const
 {
-	return add(*this, add2);
+	if (this->get_sign() == add2.get_sign()) {
+		return add(*this, add2);
+	}
+	return sub(*this, add2);
 }
 
 CBigInt CBigInt::operator-(const CBigInt& sub2) const
 { 
-	return sub(*this, sub2);
+	if (this->get_sign() == sub2.get_sign()) {
+		return sub(*this, sub2);
+	}
+	return add(*this, sub2);
 }
 
 CBigInt CBigInt::operator*(const CBigInt& multiplier) const
@@ -237,6 +246,13 @@ CBigInt CBigInt::operator*(const CBigInt& multiplier) const
 
 bool CBigInt::operator<(const CBigInt& a) const
 {
+	if (this->get_sign() == true && a.get_sign() == false) {
+		return false;
+	}
+	if (this->get_sign() == false && a.get_sign() == true) {
+		return true;
+	}
+
 	CBigInt res;
 	deque<unsigned char>::const_iterator i1 = this->m_data.begin();
 	deque<unsigned char>::const_iterator i2 = a.m_data.begin();
@@ -252,19 +268,21 @@ bool CBigInt::operator<(const CBigInt& a) const
 	int l2 = a.m_data.end() - i2;
 	
 	if (l1 > l2) {
-		return false;
+		return !this->get_sign();
 	}
+
 	if (l1 < l2) {
-		return true;
+		return this->get_sign();
 	}
 	for (; i1 != this->m_data.end(); i1++, i2++) {
 		if (*i1 < *i2) {
-			return true;
+			return this->get_sign();
 		}
 		if (*i1 > *i2) {
-			return false;
+			return !this->get_sign();
 		}
 	}
+	// Case when number are equal
 	return false;
 }
 
@@ -320,6 +338,9 @@ int CBigInt::toInt() const
 
 ostream& operator <<(ostream& os, const CBigInt& num)
 {
+	if (num.m_positive == false) {
+		os << '-';
+	}
 	for (auto x : num.m_data) {
 		unsigned char uc = x + '0';
 		os << uc;
@@ -334,7 +355,7 @@ CNumber CNumber::operator +(const CNumber& a2) const
 	const CNumber *addendum2;
 	CBigInt nzeroes;
 
-	// Make exponent
+	// Fix me
 	if (this->m_Exp < a2.m_Exp) {
 		addendum1 = *this;
 		addendum2 = &a2;
@@ -346,9 +367,10 @@ CNumber CNumber::operator +(const CNumber& a2) const
 		nzeroes = this->m_Exp - a2.m_Exp;
 	}
 	for (CBigInt i(0); i < nzeroes; i += CBigInt(1)) {
-		addendum1.m_Mantissa.head_insert('0');
+		addendum1.m_Mantissa.head_insert(0);
 	}
 	res.m_Mantissa = add2(addendum1.m_Mantissa, addendum2->m_Mantissa);
+	res.m_Exp = addendum2->m_Exp;
 
 	return res;
 }
@@ -408,7 +430,7 @@ ostream& operator <<(ostream& os, const CNumber& num)
 	if (!num.m_Mantissa.get_sign()) {
 		os << "-";
 	}
-	if (!num.m_Exp.get_sign()) {
+	if (!(CBigInt(0) < num.m_Exp)) {
 		// Negative exponent
 		os << "0.";
 		if (num.m_Exp < CBigInt(255)) {

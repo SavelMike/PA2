@@ -78,7 +78,12 @@ void set_var()
 int main()
 {
 	CLexer lex;
-	
+/*
+	cout << "2 < 3 = " << ((CBigInt(2) < CBigInt(3)) ? "true" : "false") << endl;
+	cout << "-2 < -3 = " << ((CBigInt(-2) < CBigInt(-3)) ? "true" : "false") << endl;
+	cout << "2 < -3 = " << ((CBigInt(2) < CBigInt(-3)) ? "true" : "false") << endl;
+	cout << "-2 < 3 = " << ((CBigInt(-2) < CBigInt(3)) ? "true" : "false") << endl;
+*/	
 	while (1) {	
 		cerr << "Enter expression or command:" << endl;
 		try {
