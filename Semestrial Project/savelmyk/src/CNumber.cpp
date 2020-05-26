@@ -21,13 +21,11 @@ CBigInt::CBigInt(int val)
 	}
 }
 
+// Returns abs(v1) + abs(v2)
 static CBigInt add(const CBigInt& v1, const CBigInt& v2)
 {
 	int carry = 0;
-
 	CBigInt res;
-
-	res.set_sign(v1.get_sign());
 	deque<unsigned char>::const_reverse_iterator ad1 = v1.get_data().rbegin();
 	deque<unsigned char>::const_reverse_iterator ad2 = v2.get_data().rbegin();
 
@@ -62,7 +60,7 @@ static CBigInt add(const CBigInt& v1, const CBigInt& v2)
 	return res;
 }
 
-// This function sums v1 and v2. These are alligned by highest digit, etc: 
+// This function sums v1 and v2. These are aligned by highest digit, etc: 
 // 1234567
 // 89
 // Assuming 89 is in fact 8900000
@@ -110,35 +108,21 @@ static CBigInt add2(const CBigInt& v1, const CBigInt& v2)
 	return res;
 }
 
+// Returns abs(v1) - abs(v2)
 static CBigInt sub(const CBigInt& v1, const CBigInt& v2)
 {
 	deque<unsigned char>::const_reverse_iterator minuend;
 	deque<unsigned char>::const_reverse_iterator subtrahend;
 	deque<unsigned char>::const_reverse_iterator endup;
 	deque<unsigned char>::const_reverse_iterator enddown;
-	bool sign;
 
-	assert(v1.get_sign() == v2.get_sign());
-	if (v1.cmp_abs(v2) == -1) {
-		// abs(v1) < abs(v2)
-		sign = !v2.get_sign();	
-		minuend = v2.get_data().rbegin();
-		subtrahend = v1.get_data().rbegin();
-		endup = v2.get_data().rend();
-		enddown = v1.get_data().rend();
-	}
-	else {
-		// abs(v1) >= abs(v2)
-		sign = v1.get_sign();
-		minuend = v1.get_data().rbegin(); 
-		subtrahend = v2.get_data().rbegin();
-		endup = v1.get_data().rend();
-		enddown = v2.get_data().rend();
-	}
+	minuend = v1.get_data().rbegin();
+	endup = v1.get_data().rend();
+	subtrahend = v2.get_data().rbegin();
+	enddown = v2.get_data().rend();
 
 	CBigInt res;
 
-	res.set_sign(sign);
 	int carry1 = 0;
 	int carry2 = 0;
 	
@@ -170,43 +154,80 @@ static CBigInt sub(const CBigInt& v1, const CBigInt& v2)
 	return res;
 }
 
-CBigInt& CBigInt::operator+=(const CBigInt& diff)
-{
-	if (this->m_positive == diff.m_positive) {
-		*this = add(*this, diff);
-	}
-	else {
-		*this = sub(*this, diff);
-	}
-	return *this;
-}
-
-CBigInt& CBigInt::operator-=(const CBigInt& diff)
-{
-	if (this->m_positive == diff.m_positive) {
-		*this = sub(*this, diff);
-	}
-	else {
-		*this = add(*this, diff);
-	}
-
-	return *this;
-}
-
 CBigInt CBigInt::operator+(const CBigInt& add2) const
 {
-	if (this->get_sign() == add2.get_sign()) {
+	if (this->is_positive() && add2.is_positive()) {
 		return add(*this, add2);
 	}
-	return sub(*this, add2);
+	if (!this->is_positive() && !add2.is_positive()) {
+		CBigInt res = add(*this, add2);
+		res.set_negative();
+		return res;
+	}
+	int rc = this->cmp_abs(add2);
+	if (rc < 0) {
+		// abs(this) < abs(add2)
+		CBigInt res = sub(add2, *this);
+		res.set_sign(add2.get_sign());
+		return res;
+	}
+	else {
+		// abs(this) >= abs(add2)
+		CBigInt res = sub(*this, add2);
+		res.set_sign(this->get_sign());
+		return res;
+	}
+
+}
+
+CBigInt& CBigInt::operator+=(const CBigInt& diff)
+{
+	CBigInt res = *this + diff;
+	*this = res;
+	
+	return *this;
 }
 
 CBigInt CBigInt::operator-(const CBigInt& sub2) const
 { 
-	if (this->get_sign() == sub2.get_sign()) {
-		return sub(*this, sub2);
+	if (this->is_positive() && sub2.is_positive()) {
+		if (this->cmp_abs(sub2) < 0) {
+			// abs(this) < abs(sub2)
+			CBigInt res = sub(sub2, *this);
+			res.set_negative();
+			return res;
+		} else {
+			CBigInt res = sub(*this, sub2);
+			res.set_positive();
+			return res;
+		}
 	}
-	return add(*this, sub2);
+	if (!this->is_positive() && !sub2.is_positive()) {
+		int rc = this->cmp_abs(sub2);
+		if (rc <= 0) {
+			// abs(this) <= abs(sub2)
+			CBigInt res = sub(sub2, *this);
+			res.set_positive();
+			return res;
+		}
+		else {
+			CBigInt res = sub(*this, sub2);
+			res.set_negative();
+			return res;
+		}
+	}
+	CBigInt res = add(*this, sub2);
+	res.set_sign(this->get_sign());
+
+	return res;
+}
+
+CBigInt& CBigInt::operator-=(const CBigInt& diff)
+{
+	CBigInt res = *this - diff;
+	*this = res;
+
+	return *this;
 }
 
 CBigInt CBigInt::operator*(const CBigInt& multiplier) const

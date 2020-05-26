@@ -34,6 +34,7 @@ public:
 	void set_positive() { m_positive = true; }
 	void set_sign(bool sign) { m_positive = sign; }
 	bool get_sign() const { return m_positive; }
+	bool is_positive() const { return m_positive; }
 	void remove_leading_zeroes();
 	void remove_tailing_zeroes();
 	const deque<unsigned char>& get_data() const { return m_data; }
