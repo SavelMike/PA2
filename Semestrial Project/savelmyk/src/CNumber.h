@@ -26,6 +26,7 @@ public:
 	CBigInt operator*(const CBigInt& multiplier) const;
 	// <
 	bool operator<(const CBigInt& a2) const;
+	int cmp_abs(const CBigInt& a2) const;
 	void tail_append(unsigned char digit) { m_data.push_back(digit); }
 	void head_insert(unsigned char digit) { m_data.push_front(digit); }
 	int length() const { return m_data.size(); }

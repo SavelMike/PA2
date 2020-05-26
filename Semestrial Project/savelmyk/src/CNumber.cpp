@@ -118,19 +118,17 @@ static CBigInt sub(const CBigInt& v1, const CBigInt& v2)
 	deque<unsigned char>::const_reverse_iterator enddown;
 	bool sign;
 
-	if (v1 < v2) {
-		if (v1.get_sign() == v2.get_sign()) {
-			sign = !v2.get_sign();
-		}
-		else {
-			sign = v2.get_sign();
-		}
+	assert(v1.get_sign() == v2.get_sign());
+	if (v1.cmp_abs(v2) == -1) {
+		// abs(v1) < abs(v2)
+		sign = !v2.get_sign();	
 		minuend = v2.get_data().rbegin();
 		subtrahend = v1.get_data().rbegin();
 		endup = v2.get_data().rend();
 		enddown = v1.get_data().rend();
 	}
 	else {
+		// abs(v1) >= abs(v2)
 		sign = v1.get_sign();
 		minuend = v1.get_data().rbegin(); 
 		subtrahend = v2.get_data().rbegin();
@@ -244,6 +242,49 @@ CBigInt CBigInt::operator*(const CBigInt& multiplier) const
 	return res;
 }
 
+// Return value:
+// -1: abs(this) < abs(a2)
+//  0: abs(this) == abs(a2)
+//  1: abs(this) > abs(a2)
+int CBigInt::cmp_abs(const CBigInt& a2) const
+{
+	deque<unsigned char>::const_iterator i1 = this->m_data.begin();
+	deque<unsigned char>::const_iterator i2 = a2.m_data.begin();
+
+	// Skip leading zeroes
+	while (i1 != this->m_data.end() && *i1 == 0) {
+		i1++;
+	}
+	int l1 = this->m_data.end() - i1;
+
+	// Skip leading zeroes in a2
+	while (i2 != a2.m_data.end() && *i2 == 0) {
+		i2++;
+	}
+	int l2 = a2.m_data.end() - i2;
+
+	if (l1 > l2) {
+		return 1;
+	}
+	if (l1 < l2) {
+		return -1;
+	}
+	
+	for (; i1 != this->m_data.end(); i1++, i2++) {
+		if (*i1 < *i2) {
+			return -1;
+		}
+		if (*i1 > *i2) {
+			return 1;
+		}
+	}
+	
+	return 0;
+}
+
+// Return values:
+// true if this < a
+// false otherwise
 bool CBigInt::operator<(const CBigInt& a) const
 {
 	if (this->get_sign() == true && a.get_sign() == false) {
@@ -253,36 +294,14 @@ bool CBigInt::operator<(const CBigInt& a) const
 		return true;
 	}
 
-	CBigInt res;
-	deque<unsigned char>::const_iterator i1 = this->m_data.begin();
-	deque<unsigned char>::const_iterator i2 = a.m_data.begin();
-	
-	while (i1 != this->m_data.end() && *i1 == 0) {
-		i1++;
-	}
-	int l1 = this->m_data.end() - i1;
-	
-	while (i2 != a.m_data.end() && *i2 == 0) {
-		i2++;
-	}
-	int l2 = a.m_data.end() - i2;
-	
-	if (l1 > l2) {
-		return !this->get_sign();
-	}
-
-	if (l1 < l2) {
+	// Both operands have the same sign, compare absolute values
+	int res = this->cmp_abs(a);
+	if (res == -1) {
 		return this->get_sign();
 	}
-	for (; i1 != this->m_data.end(); i1++, i2++) {
-		if (*i1 < *i2) {
-			return this->get_sign();
-		}
-		if (*i1 > *i2) {
-			return !this->get_sign();
-		}
+	if (res == 1) {
+		return !this->get_sign();
 	}
-	// Case when number are equal
 	return false;
 }
 
