@@ -154,6 +154,63 @@ static CBigInt sub(const CBigInt& v1, const CBigInt& v2)
 	return res;
 }
 
+// This function subtracts v2 from v1. abs(v1) >= abs(v2). These are aligned by highest digit, etc: 
+// 89
+// 1234567
+// Assuming 89 is in fact 8900000
+static CBigInt sub2(const CBigInt& v1, const CBigInt& v2)
+{
+	deque<unsigned char>::const_reverse_iterator minuend;
+	deque<unsigned char>::const_reverse_iterator subtrahend;
+	deque<unsigned char>::const_reverse_iterator endup;
+	deque<unsigned char>::const_reverse_iterator enddown;
+
+	minuend = v1.get_data().rbegin();
+	endup = v1.get_data().rend();
+	subtrahend = v2.get_data().rbegin();
+	enddown = v2.get_data().rend();
+	int nzeroes = v1.get_data().size() - v2.get_data().size();
+
+	CBigInt res;
+
+	int carry1 = 0;
+	int carry2 = 0;
+
+	for (; minuend != endup; ) {
+		unsigned char dif;
+		unsigned char s1;
+		unsigned char s2;
+		
+		if (nzeroes < 0) {
+			s1 = 0;
+			nzeroes++;
+		}
+		else {
+			s1 = *minuend;
+			minuend++;
+		}
+		if (nzeroes > 0) {
+			s2 = 0;
+			nzeroes--;
+		}
+		else {
+			s2 = *subtrahend;
+			subtrahend++;
+		}
+
+		carry2 = 0;
+		if (s1 < (s2 + carry1)) {
+			s1 += 10;
+			carry2 = 1;
+		}
+		dif = s1 - s2 - carry1;
+		carry1 = carry2;
+		res.head_insert(dif);
+	}
+
+	return res;
+}
+
 CBigInt CBigInt::operator+(const CBigInt& add2) const
 {
 	if (this->is_positive() && add2.is_positive()) {
@@ -326,19 +383,24 @@ bool CBigInt::operator<(const CBigInt& a) const
 	return false;
 }
 
-void CBigInt::remove_leading_zeroes()
+// Returns number of deleted leading zeroes
+int CBigInt::remove_leading_zeroes()
 {
 	if (this->m_data.size() == 0) {
 		throw "Not a number";
 	}
 	
+	int zeroes = 0;
 	while (1) {
 		if (this->m_data[0] == 0 && this->m_data.size() > 1) {
 			this->m_data.pop_front();
+			zeroes++;
 			continue;
 		}
 		break;
 	}
+
+	return zeroes;
 }
 
 void CBigInt::remove_tailing_zeroes()
@@ -417,7 +479,43 @@ CNumber CNumber::operator +(const CNumber& a2) const
 
 CNumber CNumber::operator -(const CNumber& a2) const 
 {
-	return CNumber(); 
+	CBigInt nzeroes;
+	CNumber res;
+	CNumber subtrahend;
+	const CNumber *minuend;
+	int rc = this->cmp_abs(a2);
+	
+	if (rc == -1) {
+		// abs(a2) > abs(this)
+		nzeroes = a2.m_Exp - this->m_Exp;
+		minuend = &a2;
+		subtrahend = *this;
+	}
+	else {
+		nzeroes = this->m_Exp - a2.m_Exp;
+		minuend = this;
+		subtrahend = a2;
+	}
+	
+	for (CBigInt i(0); i < nzeroes; i += CBigInt(1)) {
+		subtrahend.m_Mantissa.head_insert(0);
+	}
+	res.m_Mantissa = sub2(minuend->m_Mantissa, subtrahend.m_Mantissa);
+	res.m_Exp = minuend->m_Exp;
+	
+	int lzero = res.m_Mantissa.remove_leading_zeroes();
+	res.m_Exp -= CBigInt (lzero);
+	
+	if (this->m_positive == a2.m_positive) {
+		if (rc < 0) {
+			res.m_positive = !a2.m_positive;
+		}
+		else {
+			// abs(this) >= abs(a2)
+			res.m_positive = this->m_positive;
+		}
+	}
+	return res;
 }
 
 CNumber CNumber::operator *(const CNumber& a2) const 
@@ -441,6 +539,53 @@ CNumber CNumber::operator /(const CNumber& a2) const
 CNumber CNumber::operator %(const CNumber& a2) const 
 { 
 	return CNumber(); 
+}
+
+// Returns:
+//  1 if abs(this) > abs(a2)
+//  0 if abs(this) = abs(a2)
+// -1 if abs(this) < abs(a2)
+int CNumber::cmp_abs(const CNumber& a2) const
+{
+	if (this->m_Exp < a2.m_Exp) {
+		return -1;
+	}
+	if (a2.m_Exp < this->m_Exp){
+		return 1;
+	}
+	
+	// Compare mantisses
+	deque<unsigned char>::const_iterator it1 = this->m_Mantissa.get_data().begin();
+	deque<unsigned char>::const_iterator it2 = a2.m_Mantissa.get_data().begin();
+	for (; it1 != this->m_Mantissa.get_data().end() || it2 != a2.m_Mantissa.get_data().end();) {
+		unsigned char uc1;
+		unsigned char uc2;
+		if (it1 == this->m_Mantissa.get_data().end()) {
+			uc1 = 0;
+		}
+		else {
+			uc1 = *it1;
+			it1++;
+		}
+		if (it2 == a2.m_Mantissa.get_data().end()) {
+			uc2 = 0;
+		}
+		else {
+			uc2 = *it2;
+			it2++;
+		}
+		if (uc1 == uc2) {
+			continue;
+		}
+		if (uc1 < uc2) {
+			return -1;
+		}
+		else {
+			return 1;
+		}
+	}
+	
+	return 0;
 }
 
 void CNumber::append_mantissa(int digit)
@@ -467,29 +612,31 @@ void CNumber::remove_zeroes()
 
 ostream& operator <<(ostream& os, const CNumber& num)
 {
-	if (!num.m_Mantissa.get_sign()) {
+	CNumber num1 = num;
+	num1.remove_zeroes();
+	if (!num1.m_positive) {
 		os << "-";
 	}
-	if (!(CBigInt(0) < num.m_Exp)) {
+	if (!(CBigInt(0) < num1.m_Exp)) {
 		// Negative exponent
 		os << "0.";
-		if (num.m_Exp < CBigInt(255)) {
-			int n = num.m_Exp.toInt();
-			os << string(n, '0') << num.m_Mantissa;
+		if (num1.m_Exp < CBigInt(255)) {
+			int n = num1.m_Exp.toInt();
+			os << string(n, '0') << num1.m_Mantissa;
 		}
 		else {
-			os << num.m_Mantissa << 'E' << (num.m_Exp.get_sign() ? "+" : "-") << num.m_Exp;
+			os << num1.m_Mantissa << 'E' << (num1.m_Exp.get_sign() ? "+" : "-") << num1.m_Exp;
 		}
 	}
 	else {
 		// Positive exponent
-		int n = num.m_Exp.toInt();
-		int pos = 0;
-		for (auto x : num.m_Mantissa.get_data()) {
+		int n = num1.m_Exp.toInt(); // TODO: make n CBigInt
+		int pos = 0; // TODO: make pos CBigInt
+		for (auto x : num1.m_Mantissa.get_data()) {
 			x += '0';
 			os << x;
 			pos++;
-			if (pos == n && num.m_Mantissa.length() > n) {
+			if (pos == n && num1.m_Mantissa.length() > n) {
 				os << ".";
 			}
 		}

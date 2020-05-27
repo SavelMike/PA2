@@ -35,7 +35,7 @@ public:
 	void set_sign(bool sign) { m_positive = sign; }
 	bool get_sign() const { return m_positive; }
 	bool is_positive() const { return m_positive; }
-	void remove_leading_zeroes();
+	int remove_leading_zeroes();
 	void remove_tailing_zeroes();
 	const deque<unsigned char>& get_data() const { return m_data; }
 	int toInt() const;
@@ -60,6 +60,7 @@ public:
 	CNumber operator *(const CNumber&) const;
 	CNumber operator /(const CNumber&) const;
 	CNumber operator %(const CNumber&) const;
+	int cmp_abs(const CNumber&) const;
 	void append_mantissa(int digit);
 	void append_exponent(int digit);
 	int exponent_length() { return m_Exp.length(); }

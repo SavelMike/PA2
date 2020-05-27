@@ -164,8 +164,8 @@ COperation* CLexer::exprop()
 	case '\n':
 		break;
 	default:
-//		cin.putback(m_last);
-		throw "syntax error";
+		cin.putback(m_last);
+//		throw "syntax error";
 		break;
 	}
 	return nullptr;
