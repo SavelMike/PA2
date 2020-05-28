@@ -664,7 +664,9 @@ ostream& operator <<(ostream& os, const CNumber& num)
 	}
 	if (!(CBigInt(0) < num1.m_Exp)) {
 		// Negative exponent
-		os << "0.";
+		// This should be "0.".
+		// "." is to match bc output
+		os << "."; 
 		if (num1.m_Exp < CBigInt(255)) {
 			int n = num1.m_Exp.toInt();
 			os << string(n, '0') << num1.m_Mantissa;
