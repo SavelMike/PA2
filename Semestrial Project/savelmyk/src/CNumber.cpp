@@ -450,7 +450,7 @@ ostream& operator <<(ostream& os, const CBigInt& num)
 	return os;
 }
 
-CNumber CNumber::operator +(const CNumber& a2) const 
+CNumber CNumber::add_abs(const CNumber& a2) const 
 {
 	CNumber res;
 	CNumber addendum1; // Addendum with smaller exponent
@@ -477,7 +477,30 @@ CNumber CNumber::operator +(const CNumber& a2) const
 	return res;
 }
 
-CNumber CNumber::operator -(const CNumber& a2) const 
+CNumber CNumber::operator+(const CNumber& a2) const
+{
+	CNumber res;
+	
+	if (this->m_positive == a2.m_positive) {
+		res = this->add_abs(a2);
+		res.m_positive = this->m_positive;
+		return res;
+	}
+	res = this->sub_abs(a2);
+	int rc = this->cmp_abs(a2);
+	if (rc < 0) {
+		// abs(this) < abs(a2)
+		res.m_positive = a2.m_positive;
+	}
+	else {
+		// abs(this) >= abs(a2)
+		res.m_positive = this->m_positive;
+	}
+
+	return res;
+}
+
+CNumber CNumber::sub_abs(const CNumber& a2) const 
 {
 	CBigInt nzeroes;
 	CNumber res;
@@ -515,6 +538,28 @@ CNumber CNumber::operator -(const CNumber& a2) const
 			res.m_positive = this->m_positive;
 		}
 	}
+	return res;
+}
+
+CNumber CNumber::operator-(const CNumber& a2) const
+{
+	CNumber res;
+	
+	if (this->m_positive == a2.m_positive) {
+		res = this->sub_abs(a2);
+		int rc = this->cmp_abs(a2);
+		if (rc < 0) {
+			// abs(this) < abs(a2)
+			res.m_positive = !a2.m_positive;
+		}
+		else {
+			res.m_positive = this->m_positive;
+		}
+		return res;
+	}
+	res = this->add_abs(a2);
+	res.m_positive = this->m_positive;
+	
 	return res;
 }
 

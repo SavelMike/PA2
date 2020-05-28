@@ -60,6 +60,8 @@ public:
 	CNumber operator *(const CNumber&) const;
 	CNumber operator /(const CNumber&) const;
 	CNumber operator %(const CNumber&) const;
+	CNumber add_abs(const CNumber&) const;
+	CNumber sub_abs(const CNumber&) const;
 	int cmp_abs(const CNumber&) const;
 	void append_mantissa(int digit);
 	void append_exponent(int digit);
