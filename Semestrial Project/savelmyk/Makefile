@@ -13,5 +13,6 @@ clean:
 doc:
 	echo "Not rady"
 
-
+test:
+	cd examples && ./test.sh
 
