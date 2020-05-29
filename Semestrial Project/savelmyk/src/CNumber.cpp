@@ -554,7 +554,9 @@ CNumber CNumber::operator-(const CNumber& a2) const
 	CNumber res;
 
 	if (this->isZero()) {
-		return a2;
+		res = a2;
+		res.m_positive = !a2.m_positive;
+		return res;
 	}
 	if (a2.isZero()) {
 		return *this;
