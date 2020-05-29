@@ -481,9 +481,16 @@ CNumber CNumber::operator+(const CNumber& a2) const
 {
 	CNumber res;
 	
+	if (this->isZero()) {
+		return a2;
+	}
+	if (a2.isZero()) {
+		return *this;
+	}
 	if (this->m_positive == a2.m_positive) {
 		res = this->add_abs(a2);
 		res.m_positive = this->m_positive;
+		res.remove_zeroes();
 		return res;
 	}
 	res = this->sub_abs(a2);
@@ -497,6 +504,7 @@ CNumber CNumber::operator+(const CNumber& a2) const
 		res.m_positive = this->m_positive;
 	}
 
+	res.remove_zeroes();
 	return res;
 }
 
@@ -544,6 +552,13 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 CNumber CNumber::operator-(const CNumber& a2) const
 {
 	CNumber res;
+
+	if (this->isZero()) {
+		return a2;
+	}
+	if (a2.isZero()) {
+		return *this;
+	}
 	
 	if (this->m_positive == a2.m_positive) {
 		res = this->sub_abs(a2);
@@ -555,10 +570,12 @@ CNumber CNumber::operator-(const CNumber& a2) const
 		else {
 			res.m_positive = this->m_positive;
 		}
+		res.remove_zeroes();
 		return res;
 	}
 	res = this->add_abs(a2);
 	res.m_positive = this->m_positive;
+	res.remove_zeroes();
 	
 	return res;
 }
@@ -567,12 +584,20 @@ CNumber CNumber::operator *(const CNumber& a2) const
 { 
 	CNumber res;
 
+	if (this->isZero()) {
+		return *this;
+	}
+	if (a2.isZero()) {
+		return a2;
+	}
+
 	res.m_Exp = this->m_Exp;
 	res.m_Exp += a2.m_Exp;
 	
 	res.m_Mantissa = this->m_Mantissa * a2.m_Mantissa;
 	res.m_Exp -= CBigInt(this->m_Mantissa.length() + a2.m_Mantissa.length() - res.m_Mantissa.length());
-	
+
+	res.remove_zeroes();
 	return res; 
 }
 
@@ -652,11 +677,16 @@ void CNumber::remove_zeroes()
 {
 	this->m_Mantissa.remove_leading_zeroes();
 	this->m_Mantissa.remove_tailing_zeroes();
+	this->m_Zero = (this->m_Mantissa.length() == 1 && this->m_Mantissa.get_data()[0] == 0);
 	this->m_Exp.remove_leading_zeroes();
 }
 
 ostream& operator <<(ostream& os, const CNumber& num)
 {
+	if (num.isZero()) {
+		os << 0;
+		return os;
+	}
 	CNumber num1 = num;
 	num1.remove_zeroes();
 	if (!num1.m_positive) {

@@ -49,6 +49,7 @@ class CNumber {
 private:
 	bool m_Invalid;
 	bool m_positive;
+	bool m_Zero;
 	CBigInt m_Mantissa;
 	CBigInt m_Exp;
 public:
@@ -70,6 +71,7 @@ public:
 	void set_expsign(bool sign) { m_Exp.set_sign(sign); }
 	void remove_zeroes();
 	void set_exponent(const CBigInt& exp) { m_Exp = exp; }
+	bool isZero() const { return m_Zero; }
 	friend ostream& operator <<(ostream& os, const CNumber& num);
 };
 #endif
