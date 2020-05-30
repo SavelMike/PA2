@@ -604,8 +604,73 @@ CNumber CNumber::operator *(const CNumber& a2) const
 }
 
 CNumber CNumber::operator /(const CNumber& a2) const 
-{ 
-	return CNumber();
+{
+	if (a2.isZero()) {
+		throw "Division by zero";
+	}
+	if (this->isZero()) {
+		return *this;
+	}
+
+	CBigInt dividend;
+	CBigInt divider = a2.m_Mantissa;
+	CNumber res;	
+
+	res.set_exponent(this->m_Exp - a2.m_Exp);
+	bool first_iteration = true;
+	CBigInt countdigit; // Number of digits after floating point
+	deque<unsigned char>::const_iterator it1 = this->m_Mantissa.get_data().begin();
+	while (1) {
+		// Build dividend
+		while (1) {
+			unsigned char c;
+			if (it1 != this->m_Mantissa.get_data().end()) {
+				c = *it1;
+				it1++;
+			}
+			else {
+				c = 0;
+			}
+			dividend.tail_append(c);
+			int rc = dividend.cmp_abs(divider);
+			if (rc < 0) {
+				res.m_Mantissa.tail_append(0);
+				continue;
+			}
+			break;
+		}
+		if (first_iteration) {
+			if (dividend.length() == divider.length()) {
+				res.m_Exp += CBigInt(1);
+			}
+			countdigit = res.m_Exp;
+			first_iteration = false;
+		}
+
+		// Division
+		int digit = 0;
+		while (1) {
+			dividend -= divider;
+			digit++;
+			int rc = dividend.cmp_abs(divider);
+			if (rc < 0) {
+				break;
+			}
+			continue;
+		}
+		res.m_Mantissa.tail_append(digit);
+		countdigit -= CBigInt(1);
+		if (countdigit < 0 && countdigit.cmp_abs(CBigInt(256)) == 0) {
+			break;
+		}
+
+		if ((dividend.cmp_abs(CBigInt(0)) == 0) && it1 == this->m_Mantissa.get_data().end()) {
+			break;
+		}
+	}
+
+	res.m_Zero = false;
+	return res;
 }
 
 CNumber CNumber::operator %(const CNumber& a2) const 
