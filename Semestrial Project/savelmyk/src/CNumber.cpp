@@ -701,9 +701,6 @@ CNumber CNumber::operator %(const CNumber& a2) const
 
 	res.m_positive = true;
 
-//	res.set_exponent(this->m_Exp - a2.m_Exp);
-//	bool first_iteration = true;
-//	CBigInt countdigit; // Number of digits after floating point
 	deque<unsigned char>::const_iterator it1 = this->m_Mantissa.get_data().begin();
 	while (1) {
 		// Build dividend
@@ -728,26 +725,14 @@ CNumber CNumber::operator %(const CNumber& a2) const
 			int rc = dividend.cmp_abs(divider);
 			if (rc < 0) {
 				// Dividend < divider
-//				res.m_Mantissa.tail_append(0);
-//				countdigit -= CBigInt(1);
 				continue;
 			}
 			break;
 		}
-/*
-		if (first_iteration) {
-			if (dividend.length() == divider.length()) {
-				res.m_Exp += CBigInt(1);
-			}
-			countdigit = res.m_Exp;
-			first_iteration = false;
-		}
-*/
+
 		// Division
-		int digit = 0;
 		while (1) {
 			dividend -= divider;
-			digit++;
 			int rc = dividend.cmp_abs(divider);
 			if (rc < 0) {
 				// if dividend < divider
@@ -755,19 +740,6 @@ CNumber CNumber::operator %(const CNumber& a2) const
 			}
 			continue;
 		}
-/*
-		res.m_Mantissa.tail_append(digit);
-		countdigit -= CBigInt(1);
-		// Break endless division 
-		if (countdigit < 0 && countdigit.cmp_abs(CBigInt(256)) == 0 &&
-			it1 == this->m_Mantissa.get_data().end()) {
-			break;
-		}
-
-		if ((dividend.cmp_abs(CBigInt(0)) == 0) && it1 == this->m_Mantissa.get_data().end()) {
-			break;
-		}
-*/
 	}
 	throw "Unexpected return from mod operator";
 }
