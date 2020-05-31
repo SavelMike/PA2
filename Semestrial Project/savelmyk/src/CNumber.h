@@ -53,7 +53,7 @@ private:
 	CBigInt m_Mantissa;
 	CBigInt m_Exp;
 public:
-	CNumber() :m_Invalid(true), m_positive(true), m_Mantissa(), m_Exp(0) {}
+	CNumber() :m_Invalid(true), m_positive(true), m_Zero(true), m_Mantissa(), m_Exp(0) {}
 	bool isinvalid() { return m_Invalid; }
 	void set_valid() { m_Invalid = false; }
 	CNumber operator +(const CNumber&) const;
@@ -72,6 +72,7 @@ public:
 	void remove_zeroes();
 	void set_exponent(const CBigInt& exp) { m_Exp = exp; }
 	bool isZero() const { return m_Zero; }
+	bool is_positive_integer() const;
 	friend ostream& operator <<(ostream& os, const CNumber& num);
 };
 #endif

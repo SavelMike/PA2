@@ -7,10 +7,10 @@
 
 CNumber expr(CLexer& lex);
 
-CNumber factor(CLexer& lex)
+CNumber parenthesis(CLexer& lex)
 {
 	CNumber v1;
-
+	
 	if (lex.isparenthesis('(')) {
 		v1 = expr(lex);
 		if (!lex.isparenthesis(')')) {
@@ -20,36 +20,46 @@ CNumber factor(CLexer& lex)
 	else {
 		v1 = lex.number();
 	}
+	return v1;
+}
 
-	COperation* op = lex.factorop();
-	if (op == nullptr) {
-		// Nor multiply, division or remainder of division
-		return v1;
+CNumber factor(CLexer& lex)
+{
+	CNumber v1 = parenthesis(lex);
+
+	while (1) {
+		COperation* op = lex.factorop();
+		if (op == nullptr) {
+			// Nor multiply, division or remainder of division
+			return v1;
+		}
+		CNumber v2 = parenthesis(lex);
+		// The below will run CMul::operation or CDiv::operation or CMod::operation
+		v1 = op->operation(&v1, &v2);
+		delete op;
 	}
-	CNumber v2 = factor(lex);
-
-	// The below will run CMul::operation or CDiv::operation or CMod::operation
-	CNumber res = op->operation(&v1, &v2);
-	delete op;
 	
-	return res;
+	throw "Unexpected return from factor()";
 }
 
 CNumber expr(CLexer& lex)
 {
 	CNumber v1 = factor(lex);
-	COperation* op = lex.exprop();
-	if (op == nullptr) {
-		// Op is not plus and not minus
-		return v1;
+	
+	while (1) {
+		COperation* op = lex.exprop();
+		if (op == nullptr) {
+			// Op is not plus and not minus
+			return v1;
+		}
+		CNumber v2 = expr(lex);
+
+		// The below will run CAdd::operation or CSub::operation 
+		v1 = op->operation(&v1, &v2);
+		delete op;
 	}
-	CNumber v2 = expr(lex);
 	
-	// The below will run CAdd::operation or CSub::operation 
-	CNumber res = op->operation(&v1, &v2);
-	delete op;
-	
-	return res;
+	throw "Unexpected return from expr()";
 }
 
 void admin_commands()

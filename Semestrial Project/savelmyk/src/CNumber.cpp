@@ -614,7 +614,9 @@ CNumber CNumber::operator /(const CNumber& a2) const
 
 	CBigInt dividend;
 	CBigInt divider = a2.m_Mantissa;
-	CNumber res;	
+	CNumber res;
+
+	res.m_positive = (this->m_positive == a2.m_positive);
 
 	res.set_exponent(this->m_Exp - a2.m_Exp);
 	bool first_iteration = true;
@@ -635,6 +637,7 @@ CNumber CNumber::operator /(const CNumber& a2) const
 			int rc = dividend.cmp_abs(divider);
 			if (rc < 0) {
 				res.m_Mantissa.tail_append(0);
+				countdigit -= CBigInt(1);
 				continue;
 			}
 			break;
@@ -660,7 +663,9 @@ CNumber CNumber::operator /(const CNumber& a2) const
 		}
 		res.m_Mantissa.tail_append(digit);
 		countdigit -= CBigInt(1);
-		if (countdigit < 0 && countdigit.cmp_abs(CBigInt(256)) == 0) {
+		// Break endless division 
+		if (countdigit < 0 && countdigit.cmp_abs(CBigInt(256)) == 0 && 
+			it1 == this->m_Mantissa.get_data().end()) {
 			break;
 		}
 
@@ -673,9 +678,98 @@ CNumber CNumber::operator /(const CNumber& a2) const
 	return res;
 }
 
-CNumber CNumber::operator %(const CNumber& a2) const 
+// Operator % works with positive integers
+bool CNumber::is_positive_integer() const
+{
+	CBigInt m_length(this->m_Mantissa.length());
+	return ((m_length.cmp_abs(this->m_Exp) <= 0) && (this->m_positive) && this->m_Exp.is_positive() && !this->isZero());
+}
+
+CNumber CNumber::operator %(const CNumber& a2) const
 { 
-	return CNumber(); 
+	if (!this->is_positive_integer() || !a2.is_positive_integer()) {
+		throw "Invalid operand of mod operation";
+	}
+
+	CBigInt dividend;
+	CBigInt divider = a2.m_Mantissa;
+	for (CBigInt i(a2.m_Mantissa.length()); i < a2.m_Exp; i += CBigInt(1)) {
+		divider.tail_append(0);
+	}
+	CBigInt exp = this->m_Exp;
+	CNumber res;
+
+	res.m_positive = true;
+
+//	res.set_exponent(this->m_Exp - a2.m_Exp);
+//	bool first_iteration = true;
+//	CBigInt countdigit; // Number of digits after floating point
+	deque<unsigned char>::const_iterator it1 = this->m_Mantissa.get_data().begin();
+	while (1) {
+		// Build dividend
+		while (1) {
+			if (exp.cmp_abs(CBigInt(0)) == 0) {
+				dividend.remove_leading_zeroes();
+				res.m_Mantissa = dividend;
+				res.m_Exp = CBigInt(dividend.length());
+				res.m_Zero = (dividend.cmp_abs(CBigInt(0)) == 0);
+				return res;
+			}
+			exp -= CBigInt(1);
+			unsigned char c;
+			if (it1 != this->m_Mantissa.get_data().end()) {
+				c = *it1;
+				it1++;
+			}
+			else {
+				c = 0;
+			}
+			dividend.tail_append(c);
+			int rc = dividend.cmp_abs(divider);
+			if (rc < 0) {
+				// Dividend < divider
+//				res.m_Mantissa.tail_append(0);
+//				countdigit -= CBigInt(1);
+				continue;
+			}
+			break;
+		}
+/*
+		if (first_iteration) {
+			if (dividend.length() == divider.length()) {
+				res.m_Exp += CBigInt(1);
+			}
+			countdigit = res.m_Exp;
+			first_iteration = false;
+		}
+*/
+		// Division
+		int digit = 0;
+		while (1) {
+			dividend -= divider;
+			digit++;
+			int rc = dividend.cmp_abs(divider);
+			if (rc < 0) {
+				// if dividend < divider
+				break;
+			}
+			continue;
+		}
+/*
+		res.m_Mantissa.tail_append(digit);
+		countdigit -= CBigInt(1);
+		// Break endless division 
+		if (countdigit < 0 && countdigit.cmp_abs(CBigInt(256)) == 0 &&
+			it1 == this->m_Mantissa.get_data().end()) {
+			break;
+		}
+
+		if ((dividend.cmp_abs(CBigInt(0)) == 0) && it1 == this->m_Mantissa.get_data().end()) {
+			break;
+		}
+*/
+	}
+	throw "Unexpected return from mod operator";
 }
 
 // Returns:
