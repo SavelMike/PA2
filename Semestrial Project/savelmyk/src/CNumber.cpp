@@ -598,6 +598,8 @@ CNumber CNumber::operator *(const CNumber& a2) const
 		return a2;
 	}
 
+	res.m_positive = (this->m_positive == a2.m_positive);
+
 	res.m_Exp = this->m_Exp;
 	res.m_Exp += a2.m_Exp;
 	
