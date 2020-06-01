@@ -52,7 +52,7 @@ CNumber expr(CLexer& lex)
 			// Op is not plus and not minus
 			return v1;
 		}
-		CNumber v2 = expr(lex);
+		CNumber v2 = factor(lex);
 
 		// The below will run CAdd::operation or CSub::operation 
 		v1 = op->operation(&v1, &v2);
