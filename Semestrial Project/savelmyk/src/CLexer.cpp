@@ -161,8 +161,6 @@ COperation* CLexer::exprop()
 		return new CAdd();
 	case '-':
 		return new CSub();
-	case '\n':
-		break;
 	default:
 		cin.putback(m_last);
 //		throw "syntax error";
