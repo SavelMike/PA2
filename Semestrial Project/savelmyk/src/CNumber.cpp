@@ -64,7 +64,7 @@ static CBigInt add(const CBigInt& v1, const CBigInt& v2)
 // 1234567
 // 89
 // Assuming 89 is in fact 8900000
-static CBigInt add2(const CBigInt& v1, const CBigInt& v2)
+static CBigInt add2(const CBigInt& v1, const CBigInt& v2, bool& extrarank)
 {
 	deque<unsigned char>::const_reverse_iterator i1;
 	deque<unsigned char>::const_reverse_iterator i1end;
@@ -102,6 +102,7 @@ static CBigInt add2(const CBigInt& v1, const CBigInt& v2)
 		carry = sum / 10;
 	}
 	if (carry != 0) {
+		extrarank = true;
 		res.head_insert(carry);
 	}
 	
@@ -471,8 +472,12 @@ CNumber CNumber::add_abs(const CNumber& a2) const
 	for (CBigInt i(0); i < nzeroes; i += CBigInt(1)) {
 		addendum1.m_Mantissa.head_insert(0);
 	}
-	res.m_Mantissa = add2(addendum1.m_Mantissa, addendum2->m_Mantissa);
+	bool extrarank = false;
+	res.m_Mantissa = add2(addendum1.m_Mantissa, addendum2->m_Mantissa, extrarank);
 	res.m_Exp = addendum2->m_Exp;
+	if (extrarank) {
+		res.m_Exp += CBigInt(1);
+	}
 
 	return res;
 }
@@ -675,6 +680,7 @@ CNumber CNumber::operator /(const CNumber& a2) const
 	}
 
 	res.m_Zero = false;
+	res.m_Mantissa.remove_leading_zeroes();
 	return res;
 }
 

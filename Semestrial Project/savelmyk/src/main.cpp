@@ -116,6 +116,7 @@ int main()
 				cin.putback(c);
 				cerr << "Result of expression: "; 
 				cout << expr(lex) << endl;
+				cin.get();
 			}
 		}
 		catch (const char* str) {
