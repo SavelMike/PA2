@@ -6,19 +6,19 @@
 bool CLexer::isparenthesis(char p)
 {
 	// Skip leading spaces
+	char c;
 	while (1) {
-		char c = cin.get();
+		c = cin.get();
 		if (c == ' ') {
 			continue;
 		}
 		else {
-			m_last = c;
 			break;
 		}
 	}
-	if (m_last == p)
+	if (c == p)
 		return true;
-	cin.putback(m_last);
+	cin.putback(c);
 	return false;
 }
 
@@ -44,12 +44,35 @@ CNumber CLexer::number()
 	
 	CNumber num;
 	
+	// Try name of variable
+	char c = cin.get();
+	if (isalpha(c)) {
+		string name(1, c);
+		while(1) {
+			c = cin.get();
+			if (isdigit(c) || isalpha(c)) {
+				name += c;
+				continue;
+			}
+			// c cannot be in variable name
+			cin.putback(c);
+			// Look for variable
+			map<string, CNumber>::const_iterator it;
+			it = m_vars.find(name);
+			if (it == m_vars.end()) {
+				// Variable name was not found
+				throw "Variable not found";
+			}
+			return m_vars[name];
+		}
+	}
+	// Parsing number
+	cin.putback(c);
 	bool seenDot = false;
 	bool zeroes_only = true;
 	CBigInt exp(0);
 	
 	// Cycle for mantissa
-	char c;
 	while (1) {
 	    c = cin.get();
 		if (isdigit(c)) {
@@ -116,27 +139,31 @@ CNumber CLexer::number()
 COperation* CLexer::factorop()
 {
 	// Skip leading spaces
+	char c;
+	
 	while (1) {
-		char c = cin.get();
+		c = cin.get();
 		if (c == ' ') {
 			continue;
 		}
 		else {
-			m_last = c;
 			break;
 		}
 	}
 
-	switch (m_last) {
+	switch (c) {
 	case '*':
 		return new CMul();
 	case '/':
 		return new CDiv();
 	case '%':
 		return new CMod();
-	default:
-		cin.putback(m_last);
+	case '+':
+	case '-':
+		cin.putback(c);
 		break;
+	default:
+		throw "Syntax error";
 	}
 	return nullptr;
 }
@@ -145,26 +172,34 @@ COperation* CLexer::factorop()
 COperation* CLexer::exprop()
 {
 	// Skip leading spaces
+	char c;
 	while (1) {
-		char c = cin.get();
+		c = cin.get();
 		if (c == ' ') {
 			continue;
 		}
 		else {
-			m_last = c;
 			break;
 		}
 	}
 
-	switch (m_last) {
+	switch (c) {
 	case '+':
 		return new CAdd();
 	case '-':
 		return new CSub();
-	default:
-		cin.putback(m_last);
-//		throw "syntax error";
+	case '*':
+	case '/':
+	case '%':
+		cin.putback(c);
 		break;
+	default:
+		throw "syntax error";
 	}
 	return nullptr;
+}
+
+void CLexer::add_variable(const string& name, const CNumber& value)
+{
+	this->m_vars[name] = value;
 }
