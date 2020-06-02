@@ -35,22 +35,30 @@ echo "12345678912233546222222222222222222222222222222222222222222222222222222222
 00000000.0000000" | ./../testgen > expr.set
 
 BC_LINE_LENGTH=0
-bc -l < expr.set | sed 's/\.0*$//' > test.ref
+bc -l < expr.set | sed -E -e 's/\.0*$//' -e 's/(\..*[1-9])0*$/\1/' > test.ref
 ./../savelmyk < expr.set > test.res 2>/dev/null
 diff test.ref test.res || { echo "bc test failed"; exit; }
-echo $(wc -l < expr.set) "tests passed" 
-exit
+echo $(wc -l < expr.set) "tests passed"
+rm expr.set
 
 # Multiplication test
-bc -l < test1 > test.ref
-./../savelmyk < test1 > test.res
-#diff test.res test.ref || { echo "Multiplication is wrong"; exit; }
+bc -l < test1 | sed -E -e 's/\.0*$//' -e 's/(\..*[1-9])0*$/\1/' > test.ref
+./../savelmyk < test1 > test.res 2>/dev/null
+diff test.ref test.res || { echo "Multiplication is wrong"; exit; }
 
 echo "Multiplication test is ok"
 
 # Addition test
-bc -l < test2 > test.ref
-./../savelmyk < test2 > test.res
-diff test.res test.ref || { echo "Addition is wrong"; exit; }
+bc -l < test2 | sed -E -e 's/\.0*$//' -e 's/(\..*[1-9])0*$/\1/' > test.ref
+./../savelmyk < test2 > test.res 2>/dev/null
+diff test.ref test.res || { echo "Addition is wrong"; exit; }
 
 echo "Addition test is ok"
+
+# Mixed test
+bc -l < test3 | sed -E -e 's/\.0*$//' -e 's/(\..*[1-9])0*$/\1/' > test.ref
+./../savelmyk < test3 > test.res 2>/dev/null
+diff test.ref test.res || { echo "Mixed is wrong"; exit; }
+
+echo "Mixed test is ok"
+rm test.ref test.res
