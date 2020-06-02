@@ -77,23 +77,34 @@ void admin_commands()
 	}
 }
 
-void set_var()
+bool set_var(CLexer& lex)
 {
-	string str;
-	getline(cin, str);
-	cout << "set_var is not ready" << endl;
-	// cin.get(); // Get '\n'
+	string name;
+	
+	while (1) {
+		char c = cin.get();
+		if (isalpha(c) || isdigit(c)) {
+			name += c;
+			continue;
+		}
+		if (c == '=') {
+			CNumber value = expr(lex);
+			lex.add_variable(name, value);
+			cout << "var " << name << " = " << value << " is added" << endl;
+			return true;
+		}
+		cin.putback(c);
+		for (int i = name.length() - 1; i >= 0; i--) {
+			cin.putback(name[i]);
+		}
+		return false;
+	}
 }
 
 int main()
 {
 	CLexer lex;
-/*
-	cout << "2 < 3 = " << ((CBigInt(2) < CBigInt(3)) ? "true" : "false") << endl;
-	cout << "-2 < -3 = " << ((CBigInt(-2) < CBigInt(-3)) ? "true" : "false") << endl;
-	cout << "2 < -3 = " << ((CBigInt(2) < CBigInt(-3)) ? "true" : "false") << endl;
-	cout << "-2 < 3 = " << ((CBigInt(-2) < CBigInt(3)) ? "true" : "false") << endl;
-*/	
+
 	while (1) {	
 		cerr << "Enter expression or command:" << endl;
 		try {
@@ -105,19 +116,24 @@ int main()
 			if (c == ':') {
 				// :quit, :save, :load, :help
 				admin_commands();
+				continue;
 			}
-			else if (isalpha(c)) {
+			if (isalpha(c)) {
 				// Set variable
 				cin.putback(c);
-				set_var();
+				if (set_var(lex)) {
+					cin.get();
+					continue;
+				}
 			}
 			else {
-				// Execute expression
 				cin.putback(c);
-				cerr << "Result of expression: "; 
-				cout << expr(lex) << endl;
-				cin.get();
 			}
+			
+			// Execute expression
+			cerr << "Result of expression: "; 
+			cout << expr(lex) << endl;
+			cin.get();	
 		}
 		catch (const char* str) {
 			cout << str << endl;
