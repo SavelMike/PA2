@@ -161,6 +161,7 @@ COperation* CLexer::factorop()
 	case '+':
 	case '-':
 	case '\n':
+	case ')':
 		cin.putback(c);
 		break;
 	default:
@@ -193,6 +194,7 @@ COperation* CLexer::exprop()
 	case '/':
 	case '%':
 	case '\n':
+	case ')':
 		cin.putback(c);
 		break;
 	default:
