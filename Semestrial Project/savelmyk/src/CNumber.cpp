@@ -838,16 +838,23 @@ ostream& operator <<(ostream& os, const CNumber& num)
 		// This should be "0.".
 		// "." is to match bc output
 		os << "."; 
-		if (num1.m_Exp < CBigInt(255)) {
+		if (num1.m_Exp.cmp_abs(CBigInt(255)) < 0) {
 			int n = num1.m_Exp.toInt();
-			os << string(n, '0') << num1.m_Mantissa;
+			os << string(n, '0');
+			int toprint = 256 - n;
+			if (toprint > num1.m_Mantissa.length()) {
+				toprint = num1.m_Mantissa.length();
+			}
+			for (int i = 0; i < toprint; i++) {
+				os << (unsigned char)(num1.m_Mantissa.get_data()[i] + '0');
+			}
 		}
 		else {
 			os << num1.m_Mantissa << 'E' << (num1.m_Exp.get_sign() ? "+" : "-") << num1.m_Exp;
 		}
 	}
 	else {
-		// Positive exponent
+		// Positive exponent.
 		int n = num1.m_Exp.toInt(); // TODO: make n CBigInt
 		int pos = 0; // TODO: make pos CBigInt
 		for (auto x : num1.m_Mantissa.get_data()) {
