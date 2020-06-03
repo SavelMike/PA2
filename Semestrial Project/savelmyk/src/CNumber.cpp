@@ -673,7 +673,7 @@ CNumber CNumber::operator /(const CNumber& a2) const
 			zeroes_only = false;
 		}
 		// Break endless division 
-		if (it1 == this->m_Mantissa.get_data().end() && !zeroes_only && afterdot>256) {
+		if (it1 == this->m_Mantissa.get_data().end() && !zeroes_only && afterdot>1024) {
 			break;
 		}
 
