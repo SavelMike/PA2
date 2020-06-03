@@ -627,7 +627,8 @@ CNumber CNumber::operator /(const CNumber& a2) const
 
 	res.set_exponent(this->m_Exp - a2.m_Exp);
 	bool first_iteration = true;
-	CBigInt countdigit; // Number of digits after floating point
+	bool zeroes_only = true;
+	int afterdot = 0; // Number of zeroes after end of mantissa
 	deque<unsigned char>::const_iterator it1 = this->m_Mantissa.get_data().begin();
 	while (1) {
 		// Build dividend
@@ -639,12 +640,12 @@ CNumber CNumber::operator /(const CNumber& a2) const
 			}
 			else {
 				c = 0;
+				afterdot++;
 			}
 			dividend.tail_append(c);
 			int rc = dividend.cmp_abs(divider);
 			if (rc < 0) {
 				res.m_Mantissa.tail_append(0);
-				countdigit -= CBigInt(1);
 				continue;
 			}
 			break;
@@ -653,7 +654,6 @@ CNumber CNumber::operator /(const CNumber& a2) const
 			if (dividend.length() == divider.length()) {
 				res.m_Exp += CBigInt(1);
 			}
-			countdigit = res.m_Exp;
 			first_iteration = false;
 		}
 
@@ -669,14 +669,16 @@ CNumber CNumber::operator /(const CNumber& a2) const
 			continue;
 		}
 		res.m_Mantissa.tail_append(digit);
-		countdigit -= CBigInt(1);
+		if (digit != 0) {
+			zeroes_only = false;
+		}
 		// Break endless division 
-		if (countdigit < 0 && countdigit.cmp_abs(CBigInt(256)) == 0 && 
-			it1 == this->m_Mantissa.get_data().end()) {
+		if (it1 == this->m_Mantissa.get_data().end() && !zeroes_only && afterdot>256) {
 			break;
 		}
 
 		if ((dividend.cmp_abs(CBigInt(0)) == 0) && it1 == this->m_Mantissa.get_data().end()) {
+			// Division without remainder 
 			break;
 		}
 	}
@@ -851,7 +853,7 @@ ostream& operator <<(ostream& os, const CNumber& num)
 		}
 		else {
 			// Scientific notation "e123..."
-			os << num1.m_Mantissa << 'E' << (num1.m_Exp.get_sign() ? "+" : "-") << num1.m_Exp;
+			os << num1.m_Mantissa << 'E' << (num1.m_Exp.get_sign() ? "+" : "") << num1.m_Exp;
 		}
 	}
 	else {
@@ -881,7 +883,7 @@ ostream& operator <<(ostream& os, const CNumber& num)
 			}
 		}
 		else {
-			os << "." << num1.m_Mantissa << 'E' << (num1.m_Exp.get_sign() ? "+" : "-") << num1.m_Exp;
+			os << "." << num1.m_Mantissa << 'E' << (num1.m_Exp.get_sign() ? "+" : "") << num1.m_Exp;
 		}
 	}
 
