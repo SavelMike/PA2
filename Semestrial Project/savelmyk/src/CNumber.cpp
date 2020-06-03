@@ -850,32 +850,38 @@ ostream& operator <<(ostream& os, const CNumber& num)
 			}
 		}
 		else {
+			// Scientific notation "e123..."
 			os << num1.m_Mantissa << 'E' << (num1.m_Exp.get_sign() ? "+" : "-") << num1.m_Exp;
 		}
 	}
 	else {
 		// Positive exponent.
-		int n = num1.m_Exp.toInt(); // TODO: make n CBigInt
-		int pos = 0; // TODO: make pos CBigInt
-		int afterdot = -1;
-		for (auto x : num1.m_Mantissa.get_data()) {
-			x += '0';
-			os << x;
-			pos++;
-			if (pos == n && num1.m_Mantissa.length() > n) {
-				os << ".";
-				afterdot++;
-				continue;
-			}
-			if (afterdot != -1) {
-				afterdot++;
-				if (afterdot == 256) {
-					break;
+		if (num1.m_Exp.cmp_abs(CBigInt(255)) < 0) {
+			int n = num1.m_Exp.toInt();
+			int pos = 0;
+			int afterdot = -1;
+			for (auto x : num1.m_Mantissa.get_data()) {
+				x += '0';
+				os << x;
+				pos++;
+				if (pos == n && num1.m_Mantissa.length() > n) {
+					os << ".";
+					afterdot++;
+					continue;
+				}
+				if (afterdot != -1) {
+					afterdot++;
+					if (afterdot == 256) {
+						break;
+					}
 				}
 			}
+			if (n > pos) {
+				os << string(n - pos, '0');
+			}
 		}
-		if (n > pos) {
-			os << string(n - pos, '0');
+		else {
+			os << "." << num1.m_Mantissa << 'E' << (num1.m_Exp.get_sign() ? "+" : "-") << num1.m_Exp;
 		}
 	}
 
