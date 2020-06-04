@@ -1,6 +1,7 @@
 // CLexer used to parse input into lexems
 
 #include "CLexer.h"
+#include "fstream"
 
 // Used to try if next char is ( or ) 
 bool CLexer::isparenthesis(char p)
@@ -8,7 +9,7 @@ bool CLexer::isparenthesis(char p)
 	// Skip leading spaces
 	char c;
 	while (1) {
-		c = cin.get();
+		c = this->get();
 		if (c == ' ') {
 			continue;
 		}
@@ -18,7 +19,7 @@ bool CLexer::isparenthesis(char p)
 	}
 	if (c == p)
 		return true;
-	cin.putback(c);
+	this->putback(c);
 	return false;
 }
 
@@ -32,12 +33,12 @@ CNumber CLexer::number()
 {	
 	// Skip leading whitespaces 
 	while (1) {
-		char c = cin.get();
+		char c = this->get();
 		if (c == ' ') {
 			continue;
 		}
 		else {
-			cin.putback(c);
+			this->putback(c);
 			break;
 		}
 	}
@@ -45,17 +46,17 @@ CNumber CLexer::number()
 	CNumber num;
 	
 	// Try name of variable
-	char c = cin.get();
+	char c = this->get();
 	if (isalpha(c)) {
 		string name(1, c);
 		while(1) {
-			c = cin.get();
+			c = this->get();
 			if (isdigit(c) || isalpha(c)) {
 				name += c;
 				continue;
 			}
 			// c cannot be in variable name
-			cin.putback(c);
+			this->putback(c);
 			// Look for variable
 			map<string, CNumber>::const_iterator it;
 			it = m_vars.find(name);
@@ -67,14 +68,14 @@ CNumber CLexer::number()
 		}
 	}
 	// Parsing number
-	cin.putback(c);
+	this->putback(c);
 	bool seenDot = false;
 	bool zeroes_only = true;
 	CBigInt exp(0);
 	
 	// Cycle for mantissa
 	while (1) {
-	    c = cin.get();
+	    c = this->get();
 		if (isdigit(c)) {
 			num.append_mantissa(c - '0');
 			num.set_valid();
@@ -101,14 +102,16 @@ CNumber CLexer::number()
 	}
 	
 	if (c != 'E' && c != 'e') {
-		cin.putback(c);
+		if (this->get_input_stream()) {
+			this->putback(c);
+		}
 		num.set_exponent(exp);
 		num.remove_zeroes();
 
 		return num;
 	}
 
-	c = cin.get();
+	c = this->get();
 	if (c == '-') {
 		num.set_expsign(false);
 	} else if (c == '+') {
@@ -120,12 +123,15 @@ CNumber CLexer::number()
 	}
 	
 	while (1) {
-		c = cin.get();
+		c = this->get();
+		if (!this->get_input_stream()) {
+			break;
+		}
 		if (isdigit(c)) {
 			num.append_exponent(c - '0');
 			continue;
 		}
-		cin.putback(c);
+		this->putback(c);
 		break;
 	}
 
@@ -141,8 +147,11 @@ COperation* CLexer::factorop()
 	// Skip leading spaces
 	char c;
 	
+	if (!this->get_input_stream()) {
+		return nullptr;
+	}
 	while (1) {
-		c = cin.get();
+		c = this->get();
 		if (c == ' ') {
 			continue;
 		}
@@ -162,7 +171,7 @@ COperation* CLexer::factorop()
 	case '-':
 	case '\n':
 	case ')':
-		cin.putback(c);
+		this->putback(c);
 		break;
 	default:
 		throw "Syntax error";
@@ -173,10 +182,15 @@ COperation* CLexer::factorop()
 // Reads next char from input, return COperation corresponding to read char, CAdd or CSub
 COperation* CLexer::exprop()
 {
+	if (!this->get_input_stream()) {
+		return nullptr;
+	}
+
 	// Skip leading spaces
 	char c;
+
 	while (1) {
-		c = cin.get();
+		c = this->get();
 		if (c == ' ') {
 			continue;
 		}
@@ -195,7 +209,7 @@ COperation* CLexer::exprop()
 	case '%':
 	case '\n':
 	case ')':
-		cin.putback(c);
+		this->putback(c);
 		break;
 	default:
 		throw "syntax error";
@@ -206,4 +220,12 @@ COperation* CLexer::exprop()
 void CLexer::add_variable(const string& name, const CNumber& value)
 {
 	this->m_vars[name] = value;
+}
+
+void CLexer::save_command(const string& str)
+{
+	ofstream history; 
+	history.open(".savelmyk_history", ios_base::app);
+	history << str << endl;
+	history.close();
 }

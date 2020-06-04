@@ -4,6 +4,7 @@
 #include "COperation.h"
 #include "CLexer.h"
 #include <string>
+#include <sstream>
 
 CNumber expr(CLexer& lex);
 
@@ -62,10 +63,10 @@ CNumber expr(CLexer& lex)
 	throw "Unexpected return from expr()";
 }
 
-void admin_commands()
+void admin_commands(CLexer& lex)
 {
 	string str;
-	getline(cin, str);
+	getline(lex.get_input_stream(), str);
 	if (str == "quit") {
 		exit(0);
 	}
@@ -82,7 +83,7 @@ bool set_var(CLexer& lex)
 	string name;
 	
 	while (1) {
-		char c = cin.get();
+		char c = lex.get();
 		if (isalpha(c) || isdigit(c)) {
 			name += c;
 			continue;
@@ -93,9 +94,9 @@ bool set_var(CLexer& lex)
 			cerr << "var " << name << " = " << value << " is added" << endl;
 			return true;
 		}
-		cin.putback(c);
+		lex.putback(c);
 		for (int i = name.length() - 1; i >= 0; i--) {
-			cin.putback(name[i]);
+			lex.putback(name[i]);
 		}
 		return false;
 	}
@@ -107,38 +108,42 @@ int main()
 
 	while (1) {	
 		cerr << "Enter expression or command:" << endl;
+		string s;
+		getline(cin, s);
+		lex.save_command(s);
+		lex.set_input(s);
 		try {
-			char c;
-		    if (!cin.get(c)) {
+			char c = lex.get();
+		    if (!c) {
 				// End of input stream
 				break;
 			}
 			if (c == ':') {
 				// :quit, :save, :load, :help
-				admin_commands();
+				admin_commands(lex);
 				continue;
 			}
 			if (isalpha(c)) {
 				// Set variable
-				cin.putback(c);
+				lex.putback(c);
 				if (set_var(lex)) {
-					cin.get();
+					lex.get();
 					continue;
 				}
 			}
 			else {
-				cin.putback(c);
+				lex.putback(c);
 			}
 			
 			// Execute expression
 			cerr << "Result of expression: "; 
 			cout << expr(lex) << endl;
-			cin.get();	
+			lex.get();	
 		}
 		catch (const char* str) {
 			cout << str << endl;
-			string s;
-			getline(cin, s);
+//			string s;
+//			getline(cin, s);
 		}
 	}
 	return 0;
