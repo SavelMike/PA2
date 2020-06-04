@@ -81,9 +81,13 @@ void admin_commands(CLexer& lex)
 bool set_var(CLexer& lex)
 {
 	string name;
+	char c;
 	
 	while (1) {
-		char c = lex.get();
+		c = lex.get();
+		if (!lex.get_input_stream()) {
+			break;
+		}
 		if (isalpha(c) || isdigit(c)) {
 			name += c;
 			continue;
@@ -94,12 +98,15 @@ bool set_var(CLexer& lex)
 			cerr << "var " << name << " = " << value << " is added" << endl;
 			return true;
 		}
-		lex.putback(c);
-		for (int i = name.length() - 1; i >= 0; i--) {
-			lex.putback(name[i]);
-		}
-		return false;
+		break;
 	}
+	if (lex.get_input_stream()) {
+		lex.putback(c);
+	}
+	for (int i = name.length() - 1; i >= 0; i--) {
+		lex.putback(name[i]);
+	}
+	return false;
 }
 
 int main()
@@ -133,9 +140,9 @@ int main()
 				// Set variable
 				lex.putback(c);
 				if (set_var(lex)) {
-					lex.get();
 					continue;
 				}
+				lex.set_input(s);
 			}
 			else {
 				lex.putback(c);
@@ -144,7 +151,7 @@ int main()
 			// Execute expression
 			cerr << "Result of expression: "; 
 			cout << expr(lex) << endl;
-			lex.get();	
+//			lex.get();	
 		}
 		catch (const char* str) {
 			cout << str << endl;
