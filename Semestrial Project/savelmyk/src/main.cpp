@@ -114,7 +114,7 @@ int main()
 		lex.set_input(s);
 		try {
 			char c = lex.get();
-		    if (!c) {
+			if (!lex.get_input_stream()) {
 				// End of input stream
 				break;
 			}
