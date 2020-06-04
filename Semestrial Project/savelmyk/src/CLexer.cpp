@@ -10,6 +10,9 @@ bool CLexer::isparenthesis(char p)
 	char c;
 	while (1) {
 		c = this->get();
+		if (!this->get_input_stream()) {
+			return false;
+		}
 		if (c == ' ') {
 			continue;
 		}
@@ -17,8 +20,15 @@ bool CLexer::isparenthesis(char p)
 			break;
 		}
 	}
-	if (c == p)
+	if (c == p) {
+		if (p == '(') {
+			m_parenths++;
+		}
+		else {
+			m_parenths--;
+		}
 		return true;
+	}
 	this->putback(c);
 	return false;
 }
@@ -147,11 +157,11 @@ COperation* CLexer::factorop()
 	// Skip leading spaces
 	char c;
 	
-	if (!this->get_input_stream()) {
-		return nullptr;
-	}
 	while (1) {
 		c = this->get();
+		if (!this->get_input_stream()) {
+			return nullptr;
+		}
 		if (c == ' ') {
 			continue;
 		}
@@ -167,10 +177,13 @@ COperation* CLexer::factorop()
 		return new CDiv();
 	case '%':
 		return new CMod();
+	case ')':
+		if (m_parenths == 0) {
+			throw "Syntax error";
+		}
 	case '+':
 	case '-':
 	case '\n':
-	case ')':
 		this->putback(c);
 		break;
 	default:
@@ -182,15 +195,14 @@ COperation* CLexer::factorop()
 // Reads next char from input, return COperation corresponding to read char, CAdd or CSub
 COperation* CLexer::exprop()
 {
-	if (!this->get_input_stream()) {
-		return nullptr;
-	}
-
 	// Skip leading spaces
 	char c;
 
 	while (1) {
 		c = this->get();
+		if (!this->get_input_stream()) {
+			return nullptr;
+		}
 		if (c == ' ') {
 			continue;
 		}
@@ -204,11 +216,14 @@ COperation* CLexer::exprop()
 		return new CAdd();
 	case '-':
 		return new CSub();
+	case ')':
+		if (m_parenths == 0) {
+			throw "syntax error";
+		}
 	case '*':
 	case '/':
 	case '%':
 	case '\n':
-	case ')':
 		this->putback(c);
 		break;
 	default:

@@ -110,6 +110,9 @@ int main()
 		cerr << "Enter expression or command:" << endl;
 		string s;
 		getline(cin, s);
+		if (s.empty()) {
+			continue;
+		}
 		lex.save_command(s);
 		lex.set_input(s);
 		try {
