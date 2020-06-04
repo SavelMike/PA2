@@ -90,7 +90,7 @@ bool set_var(CLexer& lex)
 		if (c == '=') {
 			CNumber value = expr(lex);
 			lex.add_variable(name, value);
-			cout << "var " << name << " = " << value << " is added" << endl;
+			cerr << "var " << name << " = " << value << " is added" << endl;
 			return true;
 		}
 		cin.putback(c);
