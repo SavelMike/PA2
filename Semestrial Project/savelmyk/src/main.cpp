@@ -110,6 +110,9 @@ int main()
 		cerr << "Enter expression or command:" << endl;
 		string s;
 		getline(cin, s);
+		if (!cin) {
+			break;
+		}
 		if (s.empty()) {
 			continue;
 		}
