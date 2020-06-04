@@ -1,0 +1,13 @@
+a=12
+b=56
+c=a+b
+c
+a=b-c
+a
+z=a+b+c
+z*0.5
+y=a*b*c
+y
+0.12154*y*z
+a+b+c
+y-b-c
