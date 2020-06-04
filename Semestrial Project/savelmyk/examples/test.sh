@@ -60,4 +60,26 @@ echo "Addition test is ok"
 diff test.ref test.res || { echo "Mixed is wrong"; exit; }
 
 echo "Mixed test is ok"
+
+# Scientific notation test
+echo "1
+.12315671E+1231564654654879879879879878798798798797
+.12315671E-1231564654654879879879879878798798798781" > test.ref
+
+echo "1e100 * 1e-100
+25e1231564654654879879879879878798798798789 + 12315646e1231564654654879879879879878798798798789
+25e-1231564654654879879879879878798798798789 + 12315646e-1231564654654879879879879878798798798789" | ./../savelmyk 2>/dev/null > test.res
+diff test.ref test.res || { echo "Scientific notation test failed"; exit; }
+
+echo "Scientific notation test is ok"
+
+# echo "123456.e123456798000001234564879987987545645643132123132156456456456487987987987987988 * 3123.e21321345645645645645645645648679879879879879879879878979879879879879878456456456456456432132123" | ./../savelmyk 2>/dev/null
+# echo "100e-100 * 33000000000000 / 113546468e5000000000000" | ./../savelmyk 2>/dev/null
+
+# Variable test
+(echo "scale=256"; cat test4) | BC_LINE_LENGTH=0 bc -l | sed -E -e 's/\.0*$//' -e 's/(\..*[1-9])0*$/\1/' > test.ref
+./../savelmyk < test4 > test.res 2>/dev/null
+diff test.ref test.res || { echo "Variable test is wrong"; exit; }
+
+echo "Variable test is ok"
 rm test.ref test.res
