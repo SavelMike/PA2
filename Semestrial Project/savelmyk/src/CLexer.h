@@ -18,6 +18,14 @@ public:
 	void putback(char c) { m_sin.putback(c); }
 	istringstream& get_input_stream() { return m_sin; }
 	void save_command(const string& str);
+	void show_history();
+	void clear_history();
+	void load_variables();
+	void save_variables();
+	void repeat_command(int n);
+	void show_variables();
+	void show_instructions();
+	int get_int(const string& str);
 private:
 	map<string, CNumber> m_vars;
 	istringstream m_sin;

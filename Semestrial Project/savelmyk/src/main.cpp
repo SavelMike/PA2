@@ -6,6 +6,8 @@
 #include <string>
 #include <sstream>
 
+using namespace std;
+
 CNumber expr(CLexer& lex);
 
 CNumber parenthesis(CLexer& lex)
@@ -66,16 +68,35 @@ CNumber expr(CLexer& lex)
 void admin_commands(CLexer& lex)
 {
 	string str;
+	
 	getline(lex.get_input_stream(), str);
 	if (str == "quit") {
+		lex.save_variables();
 		exit(0);
 	}
-	if (str != "help" && str != "load" && str != "save") {
-		cout << str << " - unknown command" << endl;
+	if (str == "help") {
+		lex.show_instructions();
+		return;
 	}
-	else {
-		cout << str << " - command is not ready" << endl;
+	if (str == "history") {
+		lex.show_history();
+		return;
 	}
+	if (str == "clear") {
+		lex.clear_history();
+		return;
+	}
+	if (str == "variables") {
+		lex.show_variables();
+		return;
+	}
+	int n = lex.get_int(str);
+	if (n != 0) {
+		lex.repeat_command(n);
+		return;
+	}
+	
+	cout << str << " - unknown command" << endl;
 }
 
 bool set_var(CLexer& lex)
@@ -112,6 +133,7 @@ bool set_var(CLexer& lex)
 int main()
 {
 	CLexer lex;
+	lex.load_variables();
 
 	while (1) {	
 		cerr << "Enter expression or command:" << endl;
@@ -132,7 +154,7 @@ int main()
 				break;
 			}
 			if (c == ':') {
-				// :quit, :save, :load, :help
+				// :quit, :save, :load, :help, :show history
 				admin_commands(lex);
 				continue;
 			}
@@ -151,13 +173,11 @@ int main()
 			// Execute expression
 			cerr << "Result of expression: "; 
 			cout << expr(lex) << endl;
-//			lex.get();	
 		}
 		catch (const char* str) {
 			cout << str << endl;
-//			string s;
-//			getline(cin, s);
 		}
 	}
+	lex.save_variables();
 	return 0;
 }

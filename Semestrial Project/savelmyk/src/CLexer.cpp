@@ -244,3 +244,136 @@ void CLexer::save_command(const string& str)
 	history << str << endl;
 	history.close();
 }
+
+void CLexer::show_history()
+{
+	ifstream history;
+	history.open(".savelmyk_history");
+	if (!history.is_open()) {
+		throw "Cannot open history file";
+	}
+	string str;
+	int count = 0;
+	while (getline(history, str)) {
+		count++;
+		cout << count << ") " << str << endl;
+	}
+	history.close();
+}
+
+void CLexer::clear_history()
+{
+	remove(".savelmyk_history");
+}
+
+void CLexer::load_variables()
+{
+	ifstream vars;
+	vars.open(".savelmyk_vars");
+	if (!vars.is_open()) {
+		return;
+	}
+	string str;
+	while (getline(vars, str)) {
+		this->set_input(str);
+		string name;
+		while (1) {
+			char c = this->get();
+			if (!this->get_input_stream()) {
+				break;
+			}
+			if (isalpha(c) || isdigit(c)) {
+				name += c;
+				continue;
+			}
+			if (c == '=') {
+				bool sign = true;
+				c = this->get();
+				if (c == '-') {
+					sign = false;
+				} else {
+					this->putback(c);
+				}
+				CNumber value = this->number();
+				value.set_sign(sign);
+				this->add_variable(name, value);
+			}
+			break;
+		}
+	}
+	vars.close();
+}
+
+void CLexer::save_variables()
+{
+	ofstream vars;
+	vars.open(".savelmyk_vars", ios_base::trunc);
+	for (auto x : this->m_vars) {
+		vars << x.first << "=" << x.second << endl;
+	}
+	vars.close();
+}
+
+CNumber expr(CLexer& lex);
+
+void CLexer::repeat_command(int n)
+{
+	ifstream history;
+	history.open(".savelmyk_history");
+	string str;
+	int count = 0;
+	while (getline(history, str)) {
+		count++;
+		if (n == count) {
+			this->set_input(str);
+			char c = this->get();
+			if (c == ':') {
+				cerr << "Don't repeat admin command" << endl;
+				break;
+			}
+			this->putback(c);
+			if (str.find('=') != string::npos) {
+				// = is found, this is set var
+				cerr << "Don't repeat set_var" << endl;
+				break;
+			}
+			// Execute expression
+			cerr << "Result of expression: ";
+			cout << expr(*this) << endl;
+			break;
+		}
+	}
+	history.close();
+}
+
+void CLexer::show_variables()
+{
+	for (auto x : this->m_vars) {
+		cout << x.first << " = " << x.second << endl;
+	}
+}
+
+void CLexer::show_instructions()
+{
+	cout << "" << endl;
+	cout << "Description of the commands:" << endl;
+	cout << "	:quit" << endl;
+	cout << "	:help" << endl;
+	cout << "	:history - displays list of recent commands entered by the user." << endl;
+	cout << "	:clear - deletes list of commands." << endl;
+	cout << "	:variables - displays list of variables and their values." << endl;
+}
+
+int CLexer::get_int(const string& str)
+{
+	int res = 0;
+	for (auto x: str) {
+		if (isdigit(x)) {
+			res = 10 * res + x - '0';
+			continue;
+		}
+		return 0;
+	}
+	
+	return res;
+}

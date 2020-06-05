@@ -73,6 +73,8 @@ public:
 	void set_exponent(const CBigInt& exp) { m_Exp = exp; }
 	bool isZero() const { return m_Zero; }
 	bool is_positive_integer() const;
+	void set_sign(bool sign) { m_positive = sign; }
+
 	friend ostream& operator <<(ostream& os, const CNumber& num);
 };
 #endif
