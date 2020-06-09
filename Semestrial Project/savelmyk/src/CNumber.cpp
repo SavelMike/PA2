@@ -469,6 +469,10 @@ CNumber CNumber::add_abs(const CNumber& a2) const
 		addendum2 = this;
 		nzeroes = this->m_Exp - a2.m_Exp;
 	}
+	// Nzeroes can be very big, so limit it to 1024
+	if (CBigInt(1024) < nzeroes) {
+		throw "Difference of exponents is too big";
+	}
 	for (CBigInt i(0); i < nzeroes; i += CBigInt(1)) {
 		addendum1.m_Mantissa.head_insert(0);
 	}
@@ -486,18 +490,22 @@ CNumber CNumber::operator+(const CNumber& a2) const
 {
 	CNumber res;
 	
+	// One of addendums is zero
 	if (this->isZero()) {
 		return a2;
 	}
 	if (a2.isZero()) {
 		return *this;
 	}
+	
+	// Sum of addendums with same signs 
 	if (this->m_positive == a2.m_positive) {
 		res = this->add_abs(a2);
 		res.m_positive = this->m_positive;
 		res.remove_zeroes();
 		return res;
 	}
+	// Sum of addendums with different signs
 	res = this->sub_abs(a2);
 	int rc = this->cmp_abs(a2);
 	if (rc < 0) {
@@ -533,6 +541,9 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 		subtrahend = a2;
 	}
 	
+	if (CBigInt(1024) < nzeroes) {
+		throw "Difference of exponents is too big";
+	}
 	for (CBigInt i(0); i < nzeroes; i += CBigInt(1)) {
 		subtrahend.m_Mantissa.head_insert(0);
 	}
@@ -558,6 +569,7 @@ CNumber CNumber::operator-(const CNumber& a2) const
 {
 	CNumber res;
 
+	// One of operands is zero
 	if (this->isZero()) {
 		res = a2;
 		res.m_positive = !a2.m_positive;
@@ -567,6 +579,7 @@ CNumber CNumber::operator-(const CNumber& a2) const
 		return *this;
 	}
 	
+	// Both operands are the same sign
 	if (this->m_positive == a2.m_positive) {
 		res = this->sub_abs(a2);
 		int rc = this->cmp_abs(a2);
@@ -580,6 +593,7 @@ CNumber CNumber::operator-(const CNumber& a2) const
 		res.remove_zeroes();
 		return res;
 	}
+	// Operands with different signs
 	res = this->add_abs(a2);
 	res.m_positive = this->m_positive;
 	res.remove_zeroes();
