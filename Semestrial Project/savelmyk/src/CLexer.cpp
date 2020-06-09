@@ -297,6 +297,7 @@ void CLexer::save_command(const string& str)
 	history.close();
 }
 
+// This runs at start
 void CLexer::load_variables()
 {
 	ifstream vars;
@@ -335,6 +336,7 @@ void CLexer::load_variables()
 	vars.close();
 }
 
+// This runs on program termiantion
 void CLexer::save_variables()
 {
 	ofstream vars;
@@ -343,6 +345,7 @@ void CLexer::save_variables()
 		vars << x.first << "=" << x.second << endl;
 	}
 	vars.close();
+	m_vars.clear();
 }
 
 int CLexer::get_int(const string& str)
