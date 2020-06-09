@@ -67,36 +67,15 @@ CNumber expr(CLexer& lex)
 
 void admin_commands(CLexer& lex)
 {
-	string str;
-	
-	getline(lex.get_input_stream(), str);
-	if (str == "quit") {
-		lex.save_variables();
-		exit(0);
+	CAdmin* adm = lex.adminop();
+	if (adm != nullptr) {
+		// adm is CHelp*, CHistory*, ... 
+		adm->cmd(lex);
+		delete adm;
 	}
-	if (str == "help") {
-		lex.show_instructions();
-		return;
+	else {
+		cout << "Unknown command" << endl;
 	}
-	if (str == "history") {
-		lex.show_history();
-		return;
-	}
-	if (str == "clear") {
-		lex.clear_history();
-		return;
-	}
-	if (str == "variables") {
-		lex.show_variables();
-		return;
-	}
-	int n = lex.get_int(str);
-	if (n != 0) {
-		lex.repeat_command(n);
-		return;
-	}
-	
-	cout << str << " - unknown command" << endl;
 }
 
 bool set_var(CLexer& lex)

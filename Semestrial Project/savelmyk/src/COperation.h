@@ -6,6 +6,7 @@
 
 #include "CNumber.h"
 
+// Base class
 class COperation {
 public:
 	virtual CNumber operation(const CNumber* v1, const CNumber* v2)  const { return *v1; }
@@ -13,7 +14,7 @@ public:
 
 class CAdd : public COperation {
 public:
-	CAdd() {}
+//	CAdd() {}
 	virtual CNumber operation(const CNumber* v1, const CNumber* v2) const { return *v1 + *v2; }
 };
 

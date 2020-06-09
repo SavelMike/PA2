@@ -232,6 +232,58 @@ COperation* CLexer::exprop()
 	return nullptr;
 }
 
+CAdmin* CLexer::adminop()
+{
+	string str;
+	char c = this->get();
+		
+	switch (c)
+	{
+	default:
+		break;
+	case 'q':
+		getline(this->get_input_stream(), str);
+		if (str == "uit") {
+			return new CQuit();
+		}
+		break;
+	case 'h':
+		getline(this->get_input_stream(), str);
+		if (str == "elp") {
+			return new CHelp();
+		}
+		if (str == "istory") {
+			return new CHistory();
+		}
+		break;
+	case 'c':
+		getline(this->get_input_stream(), str);
+		if (str == "lear") {
+			return new CClear();
+		}
+		break;
+	case 'v':
+		getline(this->get_input_stream(), str);
+		if (str == "ariables") {
+			return new CVariables();
+		}
+		break;
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		this->putback(c);
+		return new CRepeat();
+	}
+	return nullptr;
+}
+
 void CLexer::add_variable(const string& name, const CNumber& value)
 {
 	this->m_vars[name] = value;
@@ -243,27 +295,6 @@ void CLexer::save_command(const string& str)
 	history.open(".savelmyk_history", ios_base::app);
 	history << str << endl;
 	history.close();
-}
-
-void CLexer::show_history()
-{
-	ifstream history;
-	history.open(".savelmyk_history");
-	if (!history.is_open()) {
-		throw "Cannot open history file";
-	}
-	string str;
-	int count = 0;
-	while (getline(history, str)) {
-		count++;
-		cout << count << ") " << str << endl;
-	}
-	history.close();
-}
-
-void CLexer::clear_history()
-{
-	remove(".savelmyk_history");
 }
 
 void CLexer::load_variables()
@@ -312,56 +343,6 @@ void CLexer::save_variables()
 		vars << x.first << "=" << x.second << endl;
 	}
 	vars.close();
-}
-
-CNumber expr(CLexer& lex);
-
-void CLexer::repeat_command(int n)
-{
-	ifstream history;
-	history.open(".savelmyk_history");
-	string str;
-	int count = 0;
-	while (getline(history, str)) {
-		count++;
-		if (n == count) {
-			this->set_input(str);
-			char c = this->get();
-			if (c == ':') {
-				cerr << "Don't repeat admin command" << endl;
-				break;
-			}
-			this->putback(c);
-			if (str.find('=') != string::npos) {
-				// = is found, this is set var
-				cerr << "Don't repeat set_var" << endl;
-				break;
-			}
-			// Execute expression
-			cerr << "Result of expression: ";
-			cout << expr(*this) << endl;
-			break;
-		}
-	}
-	history.close();
-}
-
-void CLexer::show_variables()
-{
-	for (auto x : this->m_vars) {
-		cout << x.first << " = " << x.second << endl;
-	}
-}
-
-void CLexer::show_instructions()
-{
-	cout << "" << endl;
-	cout << "Description of the commands:" << endl;
-	cout << "	:quit" << endl;
-	cout << "	:help" << endl;
-	cout << "	:history - displays list of recent commands entered by the user." << endl;
-	cout << "	:clear - deletes list of commands." << endl;
-	cout << "	:variables - displays list of variables and their values." << endl;
 }
 
 int CLexer::get_int(const string& str)
