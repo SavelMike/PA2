@@ -1,6 +1,6 @@
-compile: src/CLexer.cpp src/COperation.cpp src/CNumber.cpp src/main.cpp src/testgen.cpp
+compile: src/CLexer.cpp src/COperation.cpp src/CNumber.cpp src/CAdmin.cpp src/main.cpp src/testgen.cpp
 	g++ -o testgen src/testgen.cpp
-	g++ -o savelmyk src/CLexer.cpp src/COperation.cpp src/CNumber.cpp src/main.cpp -Isrc
+	g++ -o savelmyk src/CLexer.cpp src/COperation.cpp src/CNumber.cpp src/CAdmin.cpp src/main.cpp -Isrc
 
 all:
 	echo "Not ready"

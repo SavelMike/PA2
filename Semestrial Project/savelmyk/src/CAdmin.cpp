@@ -5,6 +5,7 @@
 void CQuit::cmd(CLexer& lex)
 {
 	lex.save_variables();
+	delete this;
 	exit(0);
 }
 
