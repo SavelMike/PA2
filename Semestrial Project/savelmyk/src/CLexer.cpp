@@ -3,6 +3,15 @@
 #include "CLexer.h"
 #include "fstream"
 
+CLexer::CLexer() :m_parenths(0)
+{
+#ifdef _WIN32
+	cout << "I am Windows" << endl;
+#else
+	cout << "I am not Windows" << endl;
+#endif
+}
+
 // Used to try if next char is ( or ) 
 bool CLexer::isparenthesis(char p)
 {
