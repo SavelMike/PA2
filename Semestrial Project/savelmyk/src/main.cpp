@@ -112,7 +112,6 @@ bool set_var(CLexer& lex)
 int main()
 {
 	CLexer lex;
-	lex.load_variables();
 
 	while (1) {	
 		cerr << "Enter expression or command:" << endl;

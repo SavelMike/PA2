@@ -23,7 +23,7 @@ void CHelp::cmd(CLexer& lex)
 void CHistory::cmd(CLexer& lex)
 {
 	ifstream history;
-	history.open(".savelmyk_history");
+	history.open(lex.get_home_dir() + ".savelmyk_history");
 	if (!history.is_open()) {
 		throw "Cannot open history file";
 	}
@@ -38,7 +38,8 @@ void CHistory::cmd(CLexer& lex)
 
 void CClear::cmd(CLexer& lex)
 {
-	remove(".savelmyk_history");
+	string filename = lex.get_home_dir() + ".savelmyk_history";
+	remove(filename.c_str());
 }
 
 void CVariables::cmd(CLexer& lex)
@@ -59,7 +60,7 @@ void CRepeat::cmd(CLexer& lex)
 		return;
 	}
 	ifstream history;
-	history.open(".savelmyk_history");
+	history.open(lex.get_home_dir() + ".savelmyk_history");
 	int count = 0;
 	while (getline(history, str)) {
 		count++;

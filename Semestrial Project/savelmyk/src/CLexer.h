@@ -21,16 +21,13 @@ public:
 	istringstream& get_input_stream() { return m_sin; }
 	map<string, CNumber>& get_m_vars() { return m_vars; }
 	void save_command(const string& str);
-	void show_history();
-	void clear_history();
 	void load_variables();
 	void save_variables();
-	void repeat_command(int n);
-	void show_variables();
-	void show_instructions();
 	int get_int(const string& str);
+	const string& get_home_dir() const { return m_homedir; }
 private:
 	map<string, CNumber> m_vars;
 	istringstream m_sin;
 	int m_parenths; // Number of open parenthesis
+	string m_homedir;
 };

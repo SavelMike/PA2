@@ -7,9 +7,13 @@ CLexer::CLexer() :m_parenths(0)
 {
 #ifdef _WIN32
 	cout << "I am Windows" << endl;
+	m_homedir = getenv("HOMEDRIVE");
+	m_homedir += getenv("HOMEPATH");
 #else
 	cout << "I am not Windows" << endl;
+	m_homedir = getenv("HOME");
 #endif
+	this->load_variables();
 }
 
 // Used to try if next char is ( or ) 
@@ -300,8 +304,8 @@ void CLexer::add_variable(const string& name, const CNumber& value)
 
 void CLexer::save_command(const string& str)
 {
-	ofstream history; 
-	history.open(".savelmyk_history", ios_base::app);
+	ofstream history;
+	history.open(m_homedir + ".savelmyk_history", ios_base::app);
 	history << str << endl;
 	history.close();
 }
@@ -310,7 +314,7 @@ void CLexer::save_command(const string& str)
 void CLexer::load_variables()
 {
 	ifstream vars;
-	vars.open(".savelmyk_vars");
+	vars.open(m_homedir + ".savelmyk_vars");
 	if (!vars.is_open()) {
 		return;
 	}
@@ -349,7 +353,7 @@ void CLexer::load_variables()
 void CLexer::save_variables()
 {
 	ofstream vars;
-	vars.open(".savelmyk_vars", ios_base::trunc);
+	vars.open(m_homedir + ".savelmyk_vars", ios_base::trunc);
 	for (auto x : this->m_vars) {
 		vars << x.first << "=" << x.second << endl;
 	}
