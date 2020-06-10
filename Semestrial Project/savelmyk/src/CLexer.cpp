@@ -9,9 +9,11 @@ CLexer::CLexer() :m_parenths(0)
 	cout << "I am Windows" << endl;
 	m_homedir = getenv("HOMEDRIVE");
 	m_homedir += getenv("HOMEPATH");
+	m_homedir += '\\';
 #else
 	cout << "I am not Windows" << endl;
 	m_homedir = getenv("HOME");
+	m_homedir += '/';
 #endif
 	this->load_variables();
 }
