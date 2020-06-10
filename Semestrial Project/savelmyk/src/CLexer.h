@@ -7,7 +7,7 @@
 
 class CLexer {
 public:
-	CLexer() :m_parenths(0) { ; }
+	CLexer();
 	bool isparenthesis(char p);
 	void putback();
 	CNumber number();
