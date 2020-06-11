@@ -10,7 +10,7 @@ using namespace std;
 
 CNumber expr(CLexer& lex);
 
-CNumber parenthesis(CLexer& lex)
+CNumber operand(CLexer& lex)
 {
 	CNumber v1;
 	
@@ -28,7 +28,7 @@ CNumber parenthesis(CLexer& lex)
 
 CNumber factor(CLexer& lex)
 {
-	CNumber v1 = parenthesis(lex);
+	CNumber v1 = operand(lex);
 
 	while (1) {
 		COperation* op = lex.factorop();
@@ -36,7 +36,7 @@ CNumber factor(CLexer& lex)
 			// Nor multiply, division or remainder of division
 			return v1;
 		}
-		CNumber v2 = parenthesis(lex);
+		CNumber v2 = operand(lex);
 		// The below will run CMul::operation or CDiv::operation or CMod::operation
 		v1 = op->operation(&v1, &v2);
 		delete op;
@@ -45,6 +45,7 @@ CNumber factor(CLexer& lex)
 	throw "Unexpected return from factor()";
 }
 
+// This function executes addition and subtraction from left to right  
 CNumber expr(CLexer& lex)
 {
 	CNumber v1 = factor(lex);
@@ -85,7 +86,7 @@ bool set_var(CLexer& lex)
 	
 	while (1) {
 		c = lex.get();
-		if (!lex.get_input_stream()) {
+		if (c == EOF) {
 			break;
 		}
 		if (isalpha(c) || isdigit(c)) {
@@ -100,7 +101,7 @@ bool set_var(CLexer& lex)
 		}
 		break;
 	}
-	if (lex.get_input_stream()) {
+	if (c != EOF) {
 		lex.putback(c);
 	}
 	for (int i = name.length() - 1; i >= 0; i--) {
@@ -115,24 +116,26 @@ int main()
 
 	while (1) {	
 		cerr << "Enter expression or command:" << endl;
+		// Get next line from input
 		string s;
 		getline(cin, s);
 		if (!cin) {
+			// EOF is met
 			break;
 		}
 		if (s.empty()) {
+			// Empty string is met
 			continue;
 		}
-		lex.save_command(s);
-		lex.set_input(s);
+		lex.save_command(s); // Record command to file $HOME/.savelmyk_history
+		lex.set_input(s); // Associate Lexer input string stream with string s
 		try {
 			char c = lex.get();
-			if (!lex.get_input_stream()) {
-				// End of input stream
+			if (c == EOF) {
 				break;
 			}
 			if (c == ':') {
-				// :quit, :save, :load, :help, :show history
+				// :quit, :history, :clear, :help, :variables, :num
 				admin_commands(lex);
 				continue;
 			}

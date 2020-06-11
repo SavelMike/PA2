@@ -25,7 +25,7 @@ bool CLexer::isparenthesis(char p)
 	char c;
 	while (1) {
 		c = this->get();
-		if (!this->get_input_stream()) {
+		if (c == EOF) {
 			return false;
 		}
 		if (c == ' ') {
@@ -127,7 +127,7 @@ CNumber CLexer::number()
 	}
 	
 	if (c != 'E' && c != 'e') {
-		if (this->get_input_stream()) {
+		if (c != EOF) {
 			this->putback(c);
 		}
 		num.set_exponent(exp);
@@ -149,7 +149,7 @@ CNumber CLexer::number()
 	
 	while (1) {
 		c = this->get();
-		if (!this->get_input_stream()) {
+		if (c == EOF) {
 			break;
 		}
 		if (isdigit(c)) {
@@ -174,7 +174,7 @@ COperation* CLexer::factorop()
 	
 	while (1) {
 		c = this->get();
-		if (!this->get_input_stream()) {
+		if (c == EOF) {
 			return nullptr;
 		}
 		if (c == ' ') {
@@ -215,7 +215,7 @@ COperation* CLexer::exprop()
 
 	while (1) {
 		c = this->get();
-		if (!this->get_input_stream()) {
+		if (c == EOF) {
 			return nullptr;
 		}
 		if (c == ' ') {
@@ -326,7 +326,7 @@ void CLexer::load_variables()
 		string name;
 		while (1) {
 			char c = this->get();
-			if (!this->get_input_stream()) {
+			if (c == EOF) {
 				break;
 			}
 			if (isalpha(c) || isdigit(c)) {
