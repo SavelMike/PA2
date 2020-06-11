@@ -10,6 +10,13 @@ using namespace std;
 
 CNumber expr(CLexer& lex);
 
+// This parses next operand from input stream
+// Example of operand:
+//   (5 + 10 * 2)
+//   10e-700
+// Return: value of next operand in input stream
+// Arguments:
+//	 lex - Clexer object. It contains expression to execute in istringstream(m_sin).
 CNumber operand(CLexer& lex)
 {
 	CNumber v1;
@@ -26,6 +33,11 @@ CNumber operand(CLexer& lex)
 	return v1;
 }
 
+// This function executes expression consisting of *, / and % from left to right
+// Example: 10 * 25 / (7 + 2) * 2.5e-16
+// Return: result of expression
+// Arguments:
+//	lex - Clexer object. It contains expression to execute in istringstream(m_sin).
 CNumber factor(CLexer& lex)
 {
 	CNumber v1 = operand(lex);
@@ -45,7 +57,11 @@ CNumber factor(CLexer& lex)
 	throw "Unexpected return from factor()";
 }
 
-// This function executes addition and subtraction from left to right  
+// This function executes expression consisting of additions and subtractions from left to right
+// Example: 10 + 25 * 7 - 2.5e-16
+// Return: result of expression
+// Arguments:
+//	lex - Clexer object. It contains expression to execute in istringstream(m_sin).
 CNumber expr(CLexer& lex)
 {
 	CNumber v1 = factor(lex);
@@ -66,6 +82,11 @@ CNumber expr(CLexer& lex)
 	throw "Unexpected return from expr()";
 }
 
+// This is called ':' is read from input stream
+// Then it parses and executes admin command
+// Return: none
+// Arguments:
+//	 lex - Clexer object. It contains expression to execute in istringstream(m_sin).
 void admin_commands(CLexer& lex)
 {
 	CAdmin* adm = lex.adminop();
@@ -79,6 +100,15 @@ void admin_commands(CLexer& lex)
 	}
 }
 
+// This parses strings like "Pi=3.14"
+// This is called when input string stream starts with a letter
+// Variable and its value is added to lex.m_variable(map<string, CNumber>)
+// Example:
+//   sq=Pi*r*r/2
+//	 myvar123=7
+//	 ppp			- wrong format, false will be returned
+//   foovar=(5+))   - exception will be thrown
+// Return: true if variable is added, false if input doesn't look like Pi=3.14
 bool set_var(CLexer& lex)
 {
 	string name;
@@ -90,22 +120,18 @@ bool set_var(CLexer& lex)
 			break;
 		}
 		if (isalpha(c) || isdigit(c)) {
+			//  Append the char c to name
 			name += c;
 			continue;
 		}
 		if (c == '=') {
+			// Name of variable is read, calculate its value
 			CNumber value = expr(lex);
 			lex.add_variable(name, value);
-			cerr << "var " << name << " = " << value << " is added" << endl;
 			return true;
 		}
+		// This is not set variable command
 		break;
-	}
-	if (c != EOF) {
-		lex.putback(c);
-	}
-	for (int i = name.length() - 1; i >= 0; i--) {
-		lex.putback(name[i]);
 	}
 	return false;
 }
@@ -140,11 +166,13 @@ int main()
 				continue;
 			}
 			if (isalpha(c)) {
-				// Set variable
+				// Try set variable
 				lex.putback(c);
 				if (set_var(lex)) {
+					// Variable and its value is ok 
 					continue;
 				}
+				// Reset input stream to execute expression
 				lex.set_input(s);
 			}
 			else {
