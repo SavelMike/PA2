@@ -441,9 +441,9 @@ int CBigInt::toInt() const
 
 ostream& operator <<(ostream& os, const CBigInt& num)
 {
-	if (num.m_positive == false) {
-		os << '-';
-	}
+//	if (num.m_positive == false) {
+//		os << '-';
+//	}
 	for (auto x : num.m_data) {
 		unsigned char uc = x + '0';
 		os << uc;
@@ -486,6 +486,9 @@ CNumber CNumber::add_abs(const CNumber& a2) const
 	return res;
 }
 
+// Return:
+//   *this + a2
+// Calculates absolute values of result and assign the sign
 CNumber CNumber::operator+(const CNumber& a2) const
 {
 	CNumber res;
@@ -768,26 +771,45 @@ CNumber CNumber::operator %(const CNumber& a2) const
 	throw "Unexpected return from mod operator";
 }
 
+// Compares absolute values of *this and a2
 // Returns:
 //  1 if abs(this) > abs(a2)
 //  0 if abs(this) = abs(a2)
 // -1 if abs(this) < abs(a2)
 int CNumber::cmp_abs(const CNumber& a2) const
 {
-	if (this->m_Exp < a2.m_Exp) {
-		return -1;
+	// Special case:
+	//		one of operands is zero
+	if (this->isZero()) {
+		if (a2.isZero()) {
+			return 0;
+		}
+		else {
+			return -1;
+		}
 	}
-	if (a2.m_Exp < this->m_Exp){
+	if (a2.isZero()) {
 		return 1;
 	}
 	
-	// Compare mantisses
+	// Compare CBigInts with CBigInt::operator <
+	if (this->m_Exp < a2.m_Exp) {
+		// Number with least exponent is smaller 
+		return -1;
+	}
+	if (a2.m_Exp < this->m_Exp) {
+		// Number with least exponent is smaller
+		return 1;
+	}
+	
+	// Compare mantisses going from left to right, ie. 0.123 and 0.1234
 	deque<unsigned char>::const_iterator it1 = this->m_Mantissa.get_data().begin();
 	deque<unsigned char>::const_iterator it2 = a2.m_Mantissa.get_data().begin();
 	for (; it1 != this->m_Mantissa.get_data().end() || it2 != a2.m_Mantissa.get_data().end();) {
 		unsigned char uc1;
 		unsigned char uc2;
 		if (it1 == this->m_Mantissa.get_data().end()) {
+			// it1 reached end of container, use 0 for uc1
 			uc1 = 0;
 		}
 		else {
@@ -795,12 +817,14 @@ int CNumber::cmp_abs(const CNumber& a2) const
 			it1++;
 		}
 		if (it2 == a2.m_Mantissa.get_data().end()) {
+			// it2 reached end of container, use 0 for uc2
 			uc2 = 0;
 		}
 		else {
 			uc2 = *it2;
 			it2++;
 		}
+		// Compare corresponding positions
 		if (uc1 == uc2) {
 			continue;
 		}
@@ -815,11 +839,13 @@ int CNumber::cmp_abs(const CNumber& a2) const
 	return 0;
 }
 
+// Used when input is parsed into a number in CLexer::number() to form Mantissa
 void CNumber::append_mantissa(int digit)
 {
 	this->m_Mantissa.tail_append(digit);
 }
 
+// Used when input is parsed into a scientific notation (ie. 1E+2) in CLexer::number to form Exponent
 void CNumber::append_exponent(int digit)
 {
 	this->m_Exp.tail_append(digit);
@@ -830,6 +856,13 @@ void CNumber::increment_exp(const CBigInt& exp)
 	this->m_Exp += exp;
 }
 
+// Optimize CNumber respresentation removing leading and tailing zeroes
+// Example:
+//		Mantissa: 000123000
+//		Exponent: 000321000
+// Result:
+//		Mantissa: 123
+//		Exponent: 321000
 void CNumber::remove_zeroes()
 {
 	this->m_Mantissa.remove_leading_zeroes();
@@ -838,6 +871,12 @@ void CNumber::remove_zeroes()
 	this->m_Exp.remove_leading_zeroes();
 }
 
+// Operator output (friend of class CNumber):
+//	This outputs numbers in two formats:
+//  regular: -.000123 or 123.76
+//	scientific notation: .1E-1234 or -123E+20000
+//  scientific notation is used when abs(exponent) >= SN_THRESHOLD
+// Special case is zero
 ostream& operator <<(ostream& os, const CNumber& num)
 {
 	if (num.isZero()) {
@@ -854,50 +893,49 @@ ostream& operator <<(ostream& os, const CNumber& num)
 		// This should be "0.".
 		// "." is to match bc output
 		os << "."; 
-		if (num1.m_Exp.cmp_abs(CBigInt(255)) < 0) {
+		if (num1.m_Exp.cmp_abs(CBigInt(static_cast<int>(CConstants::SN_THRESHOLD))) < 0) {
+			// Abs(exponent) is relatively small(<SN_THRESHOLD). Print all zeroes after dot before mantissa
 			int n = num1.m_Exp.toInt();
 			os << string(n, '0');
-			int toprint = 256 - n;
-			if (toprint > num1.m_Mantissa.length()) {
-				toprint = num1.m_Mantissa.length();
-			}
-			for (int i = 0; i < toprint; i++) {
-				os << (unsigned char)(num1.m_Mantissa.get_data()[i] + '0');
-			}
+			os << num1.m_Mantissa;
 		}
 		else {
-			// Scientific notation "e123..."
-			os << num1.m_Mantissa << 'E' << (num1.m_Exp.get_sign() ? "+" : "") << num1.m_Exp;
+			// To not print many zeroes we use scientific notation
+			// Example: .5E-5000000000
+			os << num1.m_Mantissa << "E-" << num1.m_Exp;
 		}
 	}
 	else {
 		// Positive exponent.
-		if (num1.m_Exp.cmp_abs(CBigInt(255)) < 0) {
+		if (num1.m_Exp.cmp_abs(CBigInt(static_cast<int>(CConstants::SN_THRESHOLD))) < 0) {
+			// Abs(exponent) is relatively small(<256). Print all zeroes after mantissa if any
 			int n = num1.m_Exp.toInt();
 			int pos = 0;
-			int afterdot = -1;
 			for (auto x : num1.m_Mantissa.get_data()) {
 				x += '0';
 				os << x;
 				pos++;
 				if (pos == n && num1.m_Mantissa.length() > n) {
+					// This is for the following case:
+					//		Mantissa: 12345
+					//		Exponent: 3
+					//		  Output: 123.45 
 					os << ".";
-					afterdot++;
 					continue;
-				}
-				if (afterdot != -1) {
-					afterdot++;
-					if (afterdot == 256) {
-						break;
-					}
-				}
+				}			
 			}
 			if (n > pos) {
+				// This is for the following case:
+				// Mantissa: 123
+				// Exponent: 5
+				// Output:   12300
 				os << string(n - pos, '0');
 			}
 		}
 		else {
-			os << "." << num1.m_Mantissa << 'E' << (num1.m_Exp.get_sign() ? "+" : "") << num1.m_Exp;
+			// To not print many zeroes we use scientific notation
+			// Example: .5E+5000000000
+			os << "." << num1.m_Mantissa << "E+" << num1.m_Exp;
 		}
 	}
 

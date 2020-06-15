@@ -45,6 +45,12 @@ private:
 	bool m_positive;
 };
 
+enum class CConstants
+{
+	// Scientific notation threshold
+	SN_THRESHOLD = 255
+};
+
 class CNumber {
 private:
 	bool m_Invalid;
