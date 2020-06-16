@@ -3,39 +3,45 @@
 #include "CLexer.h"
 #include "fstream"
 
+// CLexer default constructor
+//		calculates home directory using environment variables
+//		loads variable from file $HOME/.savelmyk_vars 
 CLexer::CLexer() :m_parenths(0)
 {
 #ifdef _WIN32
-	cout << "I am Windows" << endl;
 	m_homedir = getenv("HOMEDRIVE");
 	m_homedir += getenv("HOMEPATH");
 	m_homedir += '\\';
 #else
-	cout << "I am not Windows" << endl;
 	m_homedir = getenv("HOME");
 	m_homedir += '/';
 #endif
 	this->load_variables();
 }
 
-// Used to try if next char is ( or ) 
+// Used to try if next char is '(' or ')'
+//	arguments: 
+//		p: '(' or ')' 
+//  return: 
+//		true if next non-whitespace char == p
+//		false otherwise
 bool CLexer::isparenthesis(char p)
 {
-	// Skip leading spaces
 	char c;
+	
+	// Skip leading spaces and tabs
 	while (1) {
 		c = this->get();
 		if (c == EOF) {
 			return false;
 		}
-		if (c == ' ') {
+		if (c == ' ' || c == '\t') {
 			continue;
 		}
-		else {
-			break;
-		}
+		break;
 	}
 	if (c == p) {
+		// Count parenthesis
 		if (p == '(') {
 			m_parenths++;
 		}
@@ -49,29 +55,31 @@ bool CLexer::isparenthesis(char p)
 }
 
 // Reads input char by char until input is valid decimal number, i.e.
-//		123456789 -> mantissa: 123456789, exp 9
-//		1234.56789 -> mantissa: 123456789, exp 4
-//		1.234E56789 -> mantissa: 1234, exp 56790
+//		123456789 -> mantissa: 123456789, exp: 9
+//		1234.56789 -> mantissa: 123456789, exp: 4
+//		1.234E56789 -> mantissa: 1234, exp: 56790
+//		0.0001e-10 -> mantissa: 1, exp: -13
 // Store mantissa and exponent to member variables of CNumber
-
+// If input starts with alpha, assume that this is variable name.
+// Look for variable in map and return its value if found
+// Return value:
+//		CNumber::parsed number or value of variable
 CNumber CLexer::number()
 {	
-	// Skip leading whitespaces 
+	char c;
+	
+	// Skip leading spaces and tabs
 	while (1) {
-		char c = this->get();
-		if (c == ' ') {
+		c = this->get();
+		if (c == ' ' || c == '\t') {
 			continue;
 		}
-		else {
-			this->putback(c);
-			break;
-		}
+		break;
 	}
 	
 	CNumber num;
 	
 	// Try name of variable
-	char c = this->get();
 	if (isalpha(c)) {
 		string name(1, c);
 		while(1) {
@@ -105,13 +113,19 @@ CNumber CLexer::number()
 			num.append_mantissa(c - '0');
 			num.set_valid();
 			if (c == '0' && zeroes_only && seenDot) {
+				// One more zero after dot
+				// ie. if input is 0.000 then exp == -3
 				exp -= CBigInt(1);
 				continue;
 			}
-			if (c != '0') {
+			if (c != '0' && zeroes_only) {
+				// Leading zeroes are over
+				// ie. 0001 or 0.0002
 				zeroes_only = false;
 			}
 			if (!seenDot && !zeroes_only) {
+				// No dot so far
+				// ie. if input is 123 then exp == 3
 				exp += CBigInt(1);
 			}
 			continue;
@@ -127,6 +141,7 @@ CNumber CLexer::number()
 	}
 	
 	if (c != 'E' && c != 'e') {
+		// Not a scientific notation, num is almost ready
 		if (c != EOF) {
 			this->putback(c);
 		}
@@ -136,6 +151,8 @@ CNumber CLexer::number()
 		return num;
 	}
 
+	// Parse scientific notation, ie. e+125 or E-15
+	bool gotDigit = false;
 	c = this->get();
 	if (c == '-') {
 		num.set_expsign(false);
@@ -145,8 +162,10 @@ CNumber CLexer::number()
 		throw "Syntax error";
 	} else {
 		num.append_exponent(c - '0');
+		gotDigit = true;
 	}
 	
+	// Read exponent digit by digit
 	while (1) {
 		c = this->get();
 		if (c == EOF) {
@@ -154,35 +173,45 @@ CNumber CLexer::number()
 		}
 		if (isdigit(c)) {
 			num.append_exponent(c - '0');
+			gotDigit = true;
 			continue;
 		}
 		this->putback(c);
 		break;
 	}
 
+	if (!gotDigit) {
+		// No digit after e or E
+		// ie. 1.23e-
+		throw "Syntax error";
+	}
 	num.increment_exp(exp);
 	num.remove_zeroes();
-	
+
 	return num;
 }
 
-// Reads next char from input, return COperation corresponding to read char, CMul or CDef or CMod
+// Reads next char from input, 
+//		return COperation* corresponding to read char: 
+//		'*' : CMul* 
+//		'/' : CDiv*
+//		'%' : CMod*
+//		return nullptr if '+', '-', '\n' or ')' is read
+//		throw exception if any other symbol is read
 COperation* CLexer::factorop()
 {
-	// Skip leading spaces
 	char c;
 	
+	// Skip leading spaces and tabs
 	while (1) {
 		c = this->get();
 		if (c == EOF) {
 			return nullptr;
 		}
-		if (c == ' ') {
+		if (c == ' ' || c == '\t') {
 			continue;
 		}
-		else {
-			break;
-		}
+		break;
 	}
 
 	switch (c) {
@@ -193,6 +222,7 @@ COperation* CLexer::factorop()
 	case '%':
 		return new CMod();
 	case ')':
+		// ')' is ok, only if there were open paranthesis 
 		if (m_parenths == 0) {
 			throw "Syntax error";
 		}
@@ -207,23 +237,26 @@ COperation* CLexer::factorop()
 	return nullptr;
 }
 
-// Reads next char from input, return COperation corresponding to read char, CAdd or CSub
+// Reads next char from input
+//		return COperation* corresponding to read char: 
+//		'+' : CAdd* 
+//		'-' : CSub*
+//		return nullptr if '*', '/', '%', '\n' or ')' is read
+//		throw exception if any other symbol is read
 COperation* CLexer::exprop()
 {
-	// Skip leading spaces
 	char c;
 
+	// Skip leading spaces and tabs
 	while (1) {
 		c = this->get();
 		if (c == EOF) {
 			return nullptr;
 		}
-		if (c == ' ') {
+		if (c == ' ' || c == '\t') {
 			continue;
 		}
-		else {
-			break;
-		}
+		break;
 	}
 
 	switch (c) {
@@ -232,6 +265,7 @@ COperation* CLexer::exprop()
 	case '-':
 		return new CSub();
 	case ')':
+		// ')' is ok, only if there were open paranthesis 
 		if (m_parenths == 0) {
 			throw "syntax error";
 		}
@@ -247,6 +281,16 @@ COperation* CLexer::exprop()
 	return nullptr;
 }
 
+// It is called when input stream starts with ':'
+// Read the rest of input string stream
+//		return CAdmin* corresponding to read string: 
+//		"quit" : CQuit* 
+//		"help" : CHelp*
+//		"history" : CHistory*
+//		"clear" : CClear*
+//		"variables" : CVariables*
+//		[0-9] : CRepeat*
+//		return nullptr otherwise
 CAdmin* CLexer::adminop()
 {
 	string str;
@@ -299,11 +343,14 @@ CAdmin* CLexer::adminop()
 	return nullptr;
 }
 
+// This is to save variable name and variable value in m_vars container
 void CLexer::add_variable(const string& name, const CNumber& value)
 {
 	this->m_vars[name] = value;
 }
 
+// This is called automatically on every command, 
+// it appends the string str to $HOME/.savelmyk_history
 void CLexer::save_command(const string& str)
 {
 	ofstream history;
@@ -312,7 +359,8 @@ void CLexer::save_command(const string& str)
 	history.close();
 }
 
-// This runs at start
+// This is part of CLexer constructor, opens $HOME/.savelmyk_vars and builds m_vars map
+// 
 void CLexer::load_variables()
 {
 	ifstream vars;
@@ -324,6 +372,7 @@ void CLexer::load_variables()
 	while (getline(vars, str)) {
 		this->set_input(str);
 		string name;
+		// Str is in format "a=3.5"
 		while (1) {
 			char c = this->get();
 			if (c == EOF) {
@@ -333,6 +382,7 @@ void CLexer::load_variables()
 				name += c;
 				continue;
 			}
+			// Name is ready
 			if (c == '=') {
 				bool sign = true;
 				c = this->get();
@@ -352,6 +402,10 @@ void CLexer::load_variables()
 }
 
 // This runs on program termiantion
+// Iterate over m_vars container and output variable name 
+// and values to file $HOME/.savelmyk_vars
+// in format: myvar=45
+// old content of the file is removed
 void CLexer::save_variables()
 {
 	ofstream vars;
@@ -363,6 +417,9 @@ void CLexer::save_variables()
 	m_vars.clear();
 }
 
+// Used in CRepeat::cmd()
+// Convert str to integer and return it
+// 0 is returned when there is not a digit in str
 int CLexer::get_int(const string& str)
 {
 	int res = 0;
@@ -373,6 +430,6 @@ int CLexer::get_int(const string& str)
 		}
 		return 0;
 	}
-	
+
 	return res;
 }

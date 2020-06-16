@@ -851,6 +851,7 @@ void CNumber::append_exponent(int digit)
 	this->m_Exp.tail_append(digit);
 }
 
+// 
 void CNumber::increment_exp(const CBigInt& exp)
 {
 	this->m_Exp += exp;
