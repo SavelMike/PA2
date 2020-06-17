@@ -4,6 +4,7 @@
 #include <string>
 #include <iterator>
 #include <cassert>
+#include <iomanip>
 
 CBigInt::CBigInt(int val)
 {
@@ -647,6 +648,8 @@ CNumber CNumber::operator /(const CNumber& a2) const
 	bool zeroes_only = true;
 	int afterdot = 0; // Number of zeroes after end of mantissa
 	deque<unsigned char>::const_iterator it1 = this->m_Mantissa.get_data().begin();
+	CBigInt ndigits(0); // Number of digits in mantissa
+	
 	while (1) {
 		// Build dividend
 		while (1) {
@@ -689,10 +692,18 @@ CNumber CNumber::operator /(const CNumber& a2) const
 		if (digit != 0) {
 			zeroes_only = false;
 		}
-		// Break endless division 
-		if (it1 == this->m_Mantissa.get_data().end() && !zeroes_only && afterdot>1024) {
+		if (!zeroes_only) {
+			ndigits += CBigInt(1);
+		}
+		int bc_scale = static_cast<int>(CConstants::BC_SCALE);
+		if (ndigits.cmp_abs(res.m_Exp + CBigInt(bc_scale)) == 0) {
+			// Break endless division 
 			break;
 		}
+//		if (it1 == this->m_Mantissa.get_data().end() && !zeroes_only && afterdot>1024) {
+			// Break endless division 
+//			break;
+//		}
 
 		if ((dividend.cmp_abs(CBigInt(0)) == 0) && it1 == this->m_Mantissa.get_data().end()) {
 			// Division without remainder 
@@ -898,7 +909,7 @@ ostream& operator <<(ostream& os, const CNumber& num)
 			// Abs(exponent) is relatively small(<SN_THRESHOLD). Print all zeroes after dot before mantissa
 			int n = num1.m_Exp.toInt();
 			os << string(n, '0');
-			os << num1.m_Mantissa;
+			os << setw(static_cast<int>(CConstants::BC_SCALE)) << num1.m_Mantissa;
 		}
 		else {
 			// To not print many zeroes we use scientific notation

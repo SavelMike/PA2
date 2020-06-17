@@ -48,7 +48,9 @@ private:
 enum class CConstants
 {
 	// Scientific notation threshold
-	SN_THRESHOLD = 255
+	SN_THRESHOLD = 255,
+	// Number of digits after dot to be printed, like scale in bc 
+	BC_SCALE = 1024
 };
 
 class CNumber {
