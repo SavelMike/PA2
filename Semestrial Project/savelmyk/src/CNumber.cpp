@@ -909,7 +909,7 @@ ostream& operator <<(ostream& os, const CNumber& num)
 			// Abs(exponent) is relatively small(<SN_THRESHOLD). Print all zeroes after dot before mantissa
 			int n = num1.m_Exp.toInt();
 			os << string(n, '0');
-			os << setw(static_cast<int>(CConstants::BC_SCALE)) << num1.m_Mantissa;
+			os << left << setw(static_cast<int>(CConstants::BC_SCALE) - n) << num1.m_Mantissa;
 		}
 		else {
 			// To not print many zeroes we use scientific notation
