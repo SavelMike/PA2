@@ -729,21 +729,25 @@ bool CNumber::is_positive_integer() const
 	return ((m_length.cmp_abs(this->m_Exp) <= 0) && (this->m_positive) && this->m_Exp.is_positive() && !this->isZero());
 }
 
+// CNumber::operator %
+// For positive integers only
+// return:
+//		*this mod a2, ie. 5 % 3 = 2
 CNumber CNumber::operator %(const CNumber& a2) const
 { 
 	if (!this->is_positive_integer() || !a2.is_positive_integer()) {
 		throw "Invalid operand of mod operation";
 	}
 
-	CBigInt dividend;
+	// Convert divider(a2) from mantissa - exponent form to normal notation, 
+	// ie. a2.m_Mantissa = 2, a2.m_exp = 4 then divider = 2000
 	CBigInt divider = a2.m_Mantissa;
 	for (CBigInt i(a2.m_Mantissa.length()); i < a2.m_Exp; i += CBigInt(1)) {
 		divider.tail_append(0);
 	}
-	CBigInt exp = this->m_Exp;
-	CNumber res;
 
-	res.m_positive = true;
+	CBigInt dividend;
+	CBigInt exp = this->m_Exp;
 
 	deque<unsigned char>::const_iterator it1 = this->m_Mantissa.get_data().begin();
 	while (1) {
@@ -751,9 +755,12 @@ CNumber CNumber::operator %(const CNumber& a2) const
 		while (1) {
 			if (exp.cmp_abs(CBigInt(0)) == 0) {
 				dividend.remove_leading_zeroes();
+				CNumber res;
+				res.m_positive = true;
 				res.m_Mantissa = dividend;
 				res.m_Exp = CBigInt(dividend.length());
 				res.m_Zero = (dividend.cmp_abs(CBigInt(0)) == 0);
+				// res = *this % a2
 				return res;
 			}
 			exp -= CBigInt(1);
@@ -862,13 +869,14 @@ void CNumber::append_mantissa(int digit)
 	this->m_Mantissa.tail_append(digit);
 }
 
-// Used when input is parsed into a scientific notation (ie. 1E+2) in CLexer::number to form Exponent
+// Used when input is parsed into a scientific notation (ie. 1E+2) in CLexer::number() to form m_Exp
 void CNumber::append_exponent(int digit)
 {
 	this->m_Exp.tail_append(digit);
 }
 
-// 
+// Used when input scientific notation is parsed ie. 1e+2 in CLexer::number() 
+// to increment m_Exp using CBigInt::operator += ()
 void CNumber::increment_exp(const CBigInt& exp)
 {
 	this->m_Exp += exp;
@@ -894,7 +902,9 @@ void CNumber::remove_zeroes()
 //  regular: -.000123 or 123.76
 //	scientific notation: .1E-1234 or -123E+20000
 //  scientific notation is used when abs(exponent) >= SN_THRESHOLD
-// Special case is zero
+//  in regular notation number of digits after dot is limited by BC_SCALE
+//  BC_SCALE is 1024 and test.sh calls bc with scale=1024. Test.sh will fail if these constants are not equal 
+//  Special case is zero
 ostream& operator <<(ostream& os, const CNumber& num)
 {
 	if (num.isZero()) {
