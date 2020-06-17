@@ -930,7 +930,15 @@ ostream& operator <<(ostream& os, const CNumber& num)
 			// Abs(exponent) is relatively small(<256). Print all zeroes after mantissa if any
 			int n = num1.m_Exp.toInt();
 			int pos = 0;
+			bool seenDot = false;
+			int printedafterdot = 0;
 			for (auto x : num1.m_Mantissa.get_data()) {
+				if (seenDot) {
+					if (printedafterdot == static_cast<int>(CConstants::BC_SCALE)) {
+						break;
+					}
+					printedafterdot++;
+				}
 				x += '0';
 				os << x;
 				pos++;
@@ -940,6 +948,7 @@ ostream& operator <<(ostream& os, const CNumber& num)
 					//		Exponent: 3
 					//		  Output: 123.45 
 					os << ".";
+					seenDot = true;
 					continue;
 				}			
 			}
