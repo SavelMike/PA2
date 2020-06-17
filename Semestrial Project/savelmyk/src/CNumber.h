@@ -12,7 +12,7 @@ using namespace std;
 class CBigInt
 {
 public:
-	CBigInt(): m_data(), m_positive(true) { ; }
+	CBigInt(): m_data(), m_positive(true), m_ntoprint(0) { ; }
 	CBigInt(int val);
 	// +=
 	CBigInt& operator+=(const CBigInt& diff);
@@ -39,10 +39,12 @@ public:
 	void remove_tailing_zeroes();
 	const deque<unsigned char>& get_data() const { return m_data; }
 	int toInt() const;
+	void set_ntoprint(int n) { m_ntoprint = n; }
 	friend ostream& operator <<(ostream& os, const CBigInt& num);
 private:
 	deque<unsigned char> m_data;
 	bool m_positive;
+	int m_ntoprint;
 };
 
 enum class CConstants

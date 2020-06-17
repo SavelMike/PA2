@@ -4,7 +4,6 @@
 #include <string>
 #include <iterator>
 #include <cassert>
-#include <iomanip>
 
 CBigInt::CBigInt(int val)
 {
@@ -20,6 +19,7 @@ CBigInt::CBigInt(int val)
 			break;
 		}
 	}
+	m_ntoprint = 0;
 }
 
 // Returns abs(v1) + abs(v2)
@@ -445,7 +445,13 @@ ostream& operator <<(ostream& os, const CBigInt& num)
 //	if (num.m_positive == false) {
 //		os << '-';
 //	}
+	int count = 0;
+
 	for (auto x : num.m_data) {
+		if (count == num.m_ntoprint && num.m_ntoprint != 0) {
+			break;
+		}
+		count++;
 		unsigned char uc = x + '0';
 		os << uc;
 	}
@@ -909,7 +915,8 @@ ostream& operator <<(ostream& os, const CNumber& num)
 			// Abs(exponent) is relatively small(<SN_THRESHOLD). Print all zeroes after dot before mantissa
 			int n = num1.m_Exp.toInt();
 			os << string(n, '0');
-			os << left << setw(static_cast<int>(CConstants::BC_SCALE) - n) << num1.m_Mantissa;
+			num1.m_Mantissa.set_ntoprint(static_cast<int>(CConstants::BC_SCALE) - n);
+			os << num1.m_Mantissa;
 		}
 		else {
 			// To not print many zeroes we use scientific notation
