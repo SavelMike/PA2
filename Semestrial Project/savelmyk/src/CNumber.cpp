@@ -156,10 +156,8 @@ static CBigInt sub(const CBigInt& v1, const CBigInt& v2)
 	return res;
 }
 
-// This function subtracts v2 from v1. abs(v1) >= abs(v2). These are aligned by highest digit, etc: 
-// 89
-// 1234567
-// Assuming 89 is in fact 8900000
+// This function subtracts v2 from v1. abs(v1) >= abs(v2).
+// returns v1-v2
 static CBigInt sub2(const CBigInt& v1, const CBigInt& v2)
 {
 	deque<unsigned char>::const_reverse_iterator minuend;
@@ -182,8 +180,16 @@ static CBigInt sub2(const CBigInt& v1, const CBigInt& v2)
 		unsigned char dif;
 		unsigned char s1;
 		unsigned char s2;
-		
-		if (nzeroes < 0) {
+		s1 = *minuend;
+		minuend++;
+		if (subtrahend != enddown) {
+			s2 = *subtrahend;
+			subtrahend++;
+		}
+		else {
+			s2 = 0;
+		}
+/*		if (nzeroes < 0) {
 			s1 = 0;
 			nzeroes++;
 		}
@@ -199,7 +205,7 @@ static CBigInt sub2(const CBigInt& v1, const CBigInt& v2)
 			s2 = *subtrahend;
 			subtrahend++;
 		}
-
+*/
 		carry2 = 0;
 		if (s1 < (s2 + carry1)) {
 			s1 += 10;
@@ -537,21 +543,21 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 {
 	CBigInt nzeroes;
 	CNumber res;
-	CNumber subtrahend;
-	const CNumber *minuend;
+	const CNumber* subtrahend;
+	CNumber minuend;
 	
 	// Find subtrahend and minuend
 	int rc = this->cmp_abs(a2);
 	if (rc == -1) {
 		// abs(a2) > abs(this)
 		nzeroes = a2.m_Exp - this->m_Exp;
-		minuend = &a2;
-		subtrahend = *this;
+		minuend = a2;
+		subtrahend = this;
 	}
 	else {
 		nzeroes = this->m_Exp - a2.m_Exp;
-		minuend = this;
-		subtrahend = a2;
+		minuend = *this;
+		subtrahend = &a2;
 	}
 	
 	// Minuend - subtrahend
@@ -561,11 +567,15 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 		// limit exponent difference for additions and subtractions to some reasonable value - 4096 
 		throw "Difference of exponents is too big";
 	}
-	for (CBigInt i(0); i < nzeroes; i += CBigInt(1)) {
-		subtrahend.m_Mantissa.head_insert(0);
+//	for (CBigInt i(0); i < nzeroes; i += CBigInt(1)) {
+//		subtrahend.m_Mantissa.head_insert(0);
+//	}
+	CBigInt nzeroes2 = nzeroes + subtrahend->m_Mantissa.length() - minuend.m_Mantissa.length();
+	for (CBigInt i(0); i < nzeroes2; i += CBigInt(1)) {
+		minuend.m_Mantissa.tail_append(0);
 	}
-	res.m_Mantissa = sub2(minuend->m_Mantissa, subtrahend.m_Mantissa);
-	res.m_Exp = minuend->m_Exp;
+	res.m_Mantissa = sub2(minuend.m_Mantissa, subtrahend->m_Mantissa);
+	res.m_Exp = minuend.m_Exp;
 	
 	int lzero = res.m_Mantissa.remove_leading_zeroes();
 	res.m_Exp -= CBigInt (lzero);
