@@ -52,7 +52,9 @@ enum class CConstants
 	// Scientific notation threshold
 	SN_THRESHOLD = 255,
 	// Number of digits after dot to be printed, like scale in bc 
-	BC_SCALE = 1024
+	BC_SCALE = 1024,
+	// Sum/sub exp difference limit
+	EXP_DIFFERENCE_LIMIT = 4096
 };
 
 class CNumber {

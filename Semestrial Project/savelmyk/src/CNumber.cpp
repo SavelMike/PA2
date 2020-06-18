@@ -531,14 +531,17 @@ CNumber CNumber::operator+(const CNumber& a2) const
 	return res;
 }
 
+// CNumber::sub_abs()
+// Auxilliary method to find difference of absolute values 
 CNumber CNumber::sub_abs(const CNumber& a2) const 
 {
 	CBigInt nzeroes;
 	CNumber res;
 	CNumber subtrahend;
 	const CNumber *minuend;
-	int rc = this->cmp_abs(a2);
 	
+	// Find subtrahend and minuend
+	int rc = this->cmp_abs(a2);
 	if (rc == -1) {
 		// abs(a2) > abs(this)
 		nzeroes = a2.m_Exp - this->m_Exp;
@@ -551,7 +554,11 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 		subtrahend = a2;
 	}
 	
-	if (CBigInt(1024) < nzeroes) {
+	// Minuend - subtrahend
+	if (CBigInt(static_cast<int>(CConstants::EXP_DIFFERENCE_LIMIT)) < nzeroes) {
+		// Calculation of the expression like "1e+1000000000-1e-1000000000" leads to mantissa looking like
+		// "1000*000.000*0001" which is very long. So EXP_DIFFERENCE_LIMIT is introduced to 
+		// limit exponent difference for additions and subtractions to some reasonable value - 4096 
 		throw "Difference of exponents is too big";
 	}
 	for (CBigInt i(0); i < nzeroes; i += CBigInt(1)) {
@@ -575,12 +582,17 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 	return res;
 }
 
+// CNumber::operator- ()
+// Return:
+//   *this - a2
+// Calculates absolute values of result and assign the sign
 CNumber CNumber::operator-(const CNumber& a2) const
 {
 	CNumber res;
 
-	// One of operands is zero
+	// Special case: *this or a2 is 0
 	if (this->isZero()) {
+		// 0 - a2 = -a2
 		res = a2;
 		res.m_positive = !a2.m_positive;
 		return res;
@@ -589,9 +601,10 @@ CNumber CNumber::operator-(const CNumber& a2) const
 		return *this;
 	}
 	
-	// Both operands are the same sign
 	if (this->m_positive == a2.m_positive) {
+		// Both operands are the same sign so abs(res) is calculated by subtraction
 		res = this->sub_abs(a2);
+		// Define sign of result
 		int rc = this->cmp_abs(a2);
 		if (rc < 0) {
 			// abs(this) < abs(a2)
@@ -603,19 +616,24 @@ CNumber CNumber::operator-(const CNumber& a2) const
 		res.remove_zeroes();
 		return res;
 	}
-	// Operands with different signs
+	
+	// Operands with different signs so abs(res) is calculated by addition
 	res = this->add_abs(a2);
+	// Sign of result is sign of this
 	res.m_positive = this->m_positive;
 	res.remove_zeroes();
 	
 	return res;
 }
 
-// 
+// CNumber::operator* ()
+// return:
+//		*this * a2
 CNumber CNumber::operator *(const CNumber& a2) const 
 { 
 	CNumber res;
 
+	// If any factor is zero, result is zero
 	if (this->isZero()) {
 		return *this;
 	}
@@ -623,20 +641,23 @@ CNumber CNumber::operator *(const CNumber& a2) const
 		return a2;
 	}
 
+	// Res is positive if factors have the same sign
 	res.m_positive = (this->m_positive == a2.m_positive);
 
 	res.m_Exp = this->m_Exp;
 	res.m_Exp += a2.m_Exp;
 	
 	res.m_Mantissa = this->m_Mantissa * a2.m_Mantissa;
+	// Correct exponent by result
+	// ie. [m = 25, exp = 2] * [m = 5, exp = 1] = [m = 125, exp = 3]
+	//	   [m = 25, exp = 2] * [m = 3, exp = 1] = [m = 75, exp = 3] not correct. exp has to be 3 - 1
 	res.m_Exp -= CBigInt(this->m_Mantissa.length() + a2.m_Mantissa.length() - res.m_Mantissa.length());
 
 	res.remove_zeroes();
 	return res; 
 }
 
-// CNumber::operator /
-// 
+// CNumber::operator/ ()
 // return:
 //		*this / a2
 CNumber CNumber::operator /(const CNumber& a2) const 
@@ -728,7 +749,7 @@ bool CNumber::is_positive_integer() const
 	return ((m_length.cmp_abs(this->m_Exp) <= 0) && (this->m_positive) && this->m_Exp.is_positive() && !this->isZero());
 }
 
-// CNumber::operator %
+// CNumber::operator% ()
 // For positive integers only
 // return:
 //		*this mod a2, ie. 5 % 3 = 2
