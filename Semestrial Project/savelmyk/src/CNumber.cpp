@@ -611,6 +611,7 @@ CNumber CNumber::operator-(const CNumber& a2) const
 	return res;
 }
 
+// 
 CNumber CNumber::operator *(const CNumber& a2) const 
 { 
 	CNumber res;
@@ -634,8 +635,13 @@ CNumber CNumber::operator *(const CNumber& a2) const
 	return res; 
 }
 
+// CNumber::operator /
+// 
+// return:
+//		*this / a2
 CNumber CNumber::operator /(const CNumber& a2) const 
 {
+	// Sanity check
 	if (a2.isZero()) {
 		throw "Division by zero";
 	}
@@ -647,12 +653,12 @@ CNumber CNumber::operator /(const CNumber& a2) const
 	CBigInt divider = a2.m_Mantissa;
 	CNumber res;
 
+	// Res is positive if dividend and divider have the same sign 
 	res.m_positive = (this->m_positive == a2.m_positive);
 
 	res.set_exponent(this->m_Exp - a2.m_Exp);
+	
 	bool first_iteration = true;
-	bool zeroes_only = true;
-	int afterdot = 0; // Number of zeroes after end of mantissa
 	deque<unsigned char>::const_iterator it1 = this->m_Mantissa.get_data().begin();
 	CBigInt ndigits(0); // Number of digits in mantissa
 	
@@ -666,7 +672,6 @@ CNumber CNumber::operator /(const CNumber& a2) const
 			}
 			else {
 				c = 0;
-				afterdot++;
 			}
 			dividend.tail_append(c);
 			int rc = dividend.cmp_abs(divider);
@@ -677,6 +682,9 @@ CNumber CNumber::operator /(const CNumber& a2) const
 			break;
 		}
 		if (first_iteration) {
+			// On first iteration we have to correct exponent of result
+			// For example: [m = 256, exp = 3] / [m = 16, exp = 2] = [m = 16, exp = 2]
+			// res.m_Exp has to be increased by 1 as 25 > 16
 			if (dividend.length() == divider.length()) {
 				res.m_Exp += CBigInt(1);
 			}
@@ -695,21 +703,12 @@ CNumber CNumber::operator /(const CNumber& a2) const
 			continue;
 		}
 		res.m_Mantissa.tail_append(digit);
-		if (digit != 0) {
-			zeroes_only = false;
-		}
-		if (!zeroes_only) {
-			ndigits += CBigInt(1);
-		}
+		ndigits += CBigInt(1); 
 		int bc_scale = static_cast<int>(CConstants::BC_SCALE);
 		if (ndigits.cmp_abs(res.m_Exp + CBigInt(bc_scale)) == 0) {
-			// Break endless division 
+			// Break endless division so that we have at least BC_SCALE digits after dot
 			break;
 		}
-//		if (it1 == this->m_Mantissa.get_data().end() && !zeroes_only && afterdot>1024) {
-			// Break endless division 
-//			break;
-//		}
 
 		if ((dividend.cmp_abs(CBigInt(0)) == 0) && it1 == this->m_Mantissa.get_data().end()) {
 			// Division without remainder 
