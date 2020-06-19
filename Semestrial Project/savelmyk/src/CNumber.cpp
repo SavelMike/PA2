@@ -543,7 +543,7 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 {
 	CBigInt nzeroes;
 	CNumber res;
-	const CNumber* subtrahend;
+	CNumber subtrahend;
 	CNumber minuend;
 	
 	// Find subtrahend and minuend
@@ -552,12 +552,12 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 		// abs(a2) > abs(this)
 		nzeroes = a2.m_Exp - this->m_Exp;
 		minuend = a2;
-		subtrahend = this;
+		subtrahend = *this;
 	}
 	else {
 		nzeroes = this->m_Exp - a2.m_Exp;
 		minuend = *this;
-		subtrahend = &a2;
+		subtrahend = a2;
 	}
 	
 	// Minuend - subtrahend
@@ -567,14 +567,24 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 		// limit exponent difference for additions and subtractions to some reasonable value - 4096 
 		throw "Difference of exponents is too big";
 	}
-//	for (CBigInt i(0); i < nzeroes; i += CBigInt(1)) {
-//		subtrahend.m_Mantissa.head_insert(0);
-//	}
-	CBigInt nzeroes2 = nzeroes + subtrahend->m_Mantissa.length() - minuend.m_Mantissa.length();
-	for (CBigInt i(0); i < nzeroes2; i += CBigInt(1)) {
-		minuend.m_Mantissa.tail_append(0);
+
+	CBigInt m = CBigInt(minuend.m_Mantissa.length()) - minuend.m_Exp;
+	CBigInt s = CBigInt(subtrahend.m_Mantissa.length()) - subtrahend.m_Exp;
+	m = m - s;
+	if (m < 0) {
+		m = m * CBigInt(-1);
+ 		for (CBigInt i(0); i < m; i += CBigInt(1)) {
+			minuend.m_Mantissa.tail_append(0);
+		}
 	}
-	res.m_Mantissa = sub2(minuend.m_Mantissa, subtrahend->m_Mantissa);
+	else {
+		for (CBigInt i(0); i < m; i += CBigInt(1)) {
+			subtrahend.m_Mantissa.tail_append(0);
+		}
+	}
+	
+	
+	res.m_Mantissa = sub2(minuend.m_Mantissa, subtrahend.m_Mantissa);
 	res.m_Exp = minuend.m_Exp;
 	
 	int lzero = res.m_Mantissa.remove_leading_zeroes();
