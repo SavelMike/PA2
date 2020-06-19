@@ -568,6 +568,9 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 		throw "Difference of exponents is too big";
 	}
 
+	// To do "subtraction in columns" align operands by the least decimal place, 
+	// ie. if minuend = [m = 1234, exp = 4] and subtrahend = [m = 1, exp = -2] 
+	// we have to append mantissa of menuend to 123400    
 	CBigInt m = CBigInt(minuend.m_Mantissa.length()) - minuend.m_Exp;
 	CBigInt s = CBigInt(subtrahend.m_Mantissa.length()) - subtrahend.m_Exp;
 	m = m - s;
@@ -583,13 +586,15 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 		}
 	}
 	
-	
+	// Do the subtraction in columns 
 	res.m_Mantissa = sub2(minuend.m_Mantissa, subtrahend.m_Mantissa);
 	res.m_Exp = minuend.m_Exp;
 	
+	// Optimize result by removing lzeroes and mantissa of results
 	int lzero = res.m_Mantissa.remove_leading_zeroes();
 	res.m_Exp -= CBigInt (lzero);
-	
+	 
+/*	
 	if (this->m_positive == a2.m_positive) {
 		if (rc < 0) {
 			res.m_positive = !a2.m_positive;
@@ -599,6 +604,7 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 			res.m_positive = this->m_positive;
 		}
 	}
+*/
 	return res;
 }
 
