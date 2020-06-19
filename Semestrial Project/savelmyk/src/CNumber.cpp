@@ -61,43 +61,41 @@ static CBigInt add(const CBigInt& v1, const CBigInt& v2)
 	return res;
 }
 
-// This function sums v1 and v2. These are aligned by highest digit, etc: 
-// 1234567
-// 89
-// Assuming 89 is in fact 8900000
-static CBigInt add2(const CBigInt& v1, const CBigInt& v2, bool& extrarank)
+// This function sums v1 and v2. These are aligned by least decimal place, etc: 
+// 12345000
+//		777
+static CBigInt column_add(const CBigInt& v1, const CBigInt& v2, bool& extrarank)
 {
 	deque<unsigned char>::const_reverse_iterator i1;
 	deque<unsigned char>::const_reverse_iterator i1end;
 	deque<unsigned char>::const_reverse_iterator i2;
+	deque<unsigned char>::const_reverse_iterator i2end;
 	int nzeroes;
 	CBigInt res;
 	int carry = 0;
 
-	if (v1.get_data().size() < v2.get_data().size()) {
-		i1 = v2.get_data().rbegin();
-		i1end = v2.get_data().rend();
-		nzeroes = v2.get_data().size() - v1.get_data().size();
-		i2 = v1.get_data().rbegin();
-	}
-	else {
-		i1 = v1.get_data().rbegin();
-		i1end = v1.get_data().rend();
-		nzeroes = v1.get_data().size() - v2.get_data().size();
-		i2 = v2.get_data().rbegin();
-	}
-
-	for (; i1 != i1end; i1++) {
-		unsigned char a1 = *i1;
+	i1 = v1.get_data().rbegin();
+	i1end = v1.get_data().rend();
+	i2 = v2.get_data().rbegin();
+	i2end = v2.get_data().rend();
+	for (; i1 != i1end || i2 != i2end;) {
+		unsigned char a1;
 		unsigned char a2;
-		if (nzeroes > 0) {
-			a2 = 0;
-			nzeroes--;
+		if (i1 != i1end) {
+			a1 = *i1;
+			i1++;
 		}
 		else {
+			a1 = 0;
+		}
+		if (i2 != i2end) {
 			a2 = *i2;
 			i2++;
 		}
+		else {
+			a2 = 0;
+		}
+
 		unsigned char sum = a1 + a2 + carry;
 		res.head_insert(sum % 10);
 		carry = sum / 10;
@@ -158,7 +156,7 @@ static CBigInt sub(const CBigInt& v1, const CBigInt& v2)
 
 // This function subtracts v2 from v1. abs(v1) >= abs(v2).
 // returns v1-v2
-static CBigInt sub2(const CBigInt& v1, const CBigInt& v2)
+static CBigInt column_sub(const CBigInt& v1, const CBigInt& v2)
 {
 	deque<unsigned char>::const_reverse_iterator minuend;
 	deque<unsigned char>::const_reverse_iterator subtrahend;
@@ -189,23 +187,6 @@ static CBigInt sub2(const CBigInt& v1, const CBigInt& v2)
 		else {
 			s2 = 0;
 		}
-/*		if (nzeroes < 0) {
-			s1 = 0;
-			nzeroes++;
-		}
-		else {
-			s1 = *minuend;
-			minuend++;
-		}
-		if (nzeroes > 0) {
-			s2 = 0;
-			nzeroes--;
-		}
-		else {
-			s2 = *subtrahend;
-			subtrahend++;
-		}
-*/
 		carry2 = 0;
 		if (s1 < (s2 + carry1)) {
 			s1 += 10;
@@ -295,6 +276,7 @@ CBigInt& CBigInt::operator-=(const CBigInt& diff)
 	return *this;
 }
 
+// Multiplication by column
 CBigInt CBigInt::operator*(const CBigInt& multiplier) const
 {
 	unsigned char z;
@@ -328,6 +310,7 @@ CBigInt CBigInt::operator*(const CBigInt& multiplier) const
 	return res;
 }
 
+// Compare absolute values of *this and a2 
 // Return value:
 // -1: abs(this) < abs(a2)
 //  0: abs(this) == abs(a2)
@@ -391,6 +374,9 @@ bool CBigInt::operator<(const CBigInt& a) const
 	return false;
 }
 
+// Remove leading zeroes from deque<unsigned char> m_data
+// Last single zero remains
+// ie, 00001230->1230, 00000->0
 // Returns number of deleted leading zeroes
 int CBigInt::remove_leading_zeroes()
 {
@@ -411,6 +397,9 @@ int CBigInt::remove_leading_zeroes()
 	return zeroes;
 }
 
+// Remove tailing zeroes from deque<unsigned char> m_data
+// Last single zero remains
+// ie, 12300->123, 00000->0
 void CBigInt::remove_tailing_zeroes()
 {
 	if (this->m_data.size() == 0) {
@@ -427,6 +416,8 @@ void CBigInt::remove_tailing_zeroes()
 	}
 }
 
+// Convert CBigInt objects to integer, should not be used for more than 9 digits long number
+// due to 32 bit integer limitation
 int CBigInt::toInt() const
 {
 	if (this->m_data.size() > 9) {
@@ -446,11 +437,11 @@ int CBigInt::toInt() const
 	return res;
 }
 
+// Operator output (friend of class CBigInt):
+// if num.m_ntoprint is not 0 do not print more digits than that number
+// Print absolute value
 ostream& operator <<(ostream& os, const CBigInt& num)
 {
-//	if (num.m_positive == false) {
-//		os << '-';
-//	}
 	int count = 0;
 
 	for (auto x : num.m_data) {
@@ -464,35 +455,60 @@ ostream& operator <<(ostream& os, const CBigInt& num)
 	return os;
 }
 
+// CNumber::add_abs()
+// Auxilliary method to find sum of absolute values
+// Detects which is bigger by absolute value, and returns abs(*this) - abs(a2) (if abs(*this) > abs(a2)
+// or abs(a2) - abs(*this)
 CNumber CNumber::add_abs(const CNumber& a2) const 
 {
 	CNumber res;
 	CNumber addendum1; // Addendum with smaller exponent
-	const CNumber *addendum2;
+	CNumber addendum2;
 	CBigInt nzeroes;
 
-	// Fix me
+	addendum1 = *this;
+	addendum2 = a2;
+	
+	// res.m_Exp is a bigger of addendum exponents   
 	if (this->m_Exp < a2.m_Exp) {
-		addendum1 = *this;
-		addendum2 = &a2;
 		nzeroes = a2.m_Exp - this->m_Exp;
+		res.m_Exp = a2.m_Exp;
 	}
 	else {
-		addendum1 = a2;
-		addendum2 = this;
 		nzeroes = this->m_Exp - a2.m_Exp;
+		res.m_Exp = this->m_Exp;
 	}
-	// Nzeroes can be very big, so limit it to 1024
-	if (CBigInt(1024) < nzeroes) {
+	
+	if (CBigInt(static_cast<int>(CConstants::EXP_DIFFERENCE_LIMIT)) < nzeroes) {
+		// Calculation of the expression like "1e+1000000000 + 1e-1000000000" leads to mantissa looking like
+		// "1000*000.000*0001" which is very long. So EXP_DIFFERENCE_LIMIT is introduced to 
+		// limit exponent difference for additions and subtractions to some reasonable value - 4096 
 		throw "Difference of exponents is too big";
 	}
-	for (CBigInt i(0); i < nzeroes; i += CBigInt(1)) {
-		addendum1.m_Mantissa.head_insert(0);
+	
+	// To do "addition in columns" align operands by the least decimal place, 
+	// ie. if addendum1 = [m = 1234, exp = 4] and addendum2 = [m = 1, exp = -2] 
+	// we have to append mantissa of addendum1 to 123400    
+	CBigInt a = CBigInt(addendum1.m_Mantissa.length()) - addendum1.m_Exp;
+	CBigInt b = CBigInt(addendum2.m_Mantissa.length()) - addendum2.m_Exp;
+	a = a - b;
+	if (a < 0) {
+		a = a * CBigInt(-1);
+		for (CBigInt i(0); i < a; i += CBigInt(1)) {
+			addendum1.m_Mantissa.tail_append(0);
+		}
 	}
+	else {
+		for (CBigInt i(0); i < a; i += CBigInt(1)) {
+			addendum2.m_Mantissa.tail_append(0);
+		}
+	}
+	
 	bool extrarank = false;
-	res.m_Mantissa = add2(addendum1.m_Mantissa, addendum2->m_Mantissa, extrarank);
-	res.m_Exp = addendum2->m_Exp;
+	// Do the addition in columns 
+	res.m_Mantissa = column_add(addendum1.m_Mantissa, addendum2.m_Mantissa, extrarank);
 	if (extrarank) {
+		// res.m_Exp is to be increased by one
 		res.m_Exp += CBigInt(1);
 	}
 
@@ -538,7 +554,9 @@ CNumber CNumber::operator+(const CNumber& a2) const
 }
 
 // CNumber::sub_abs()
-// Auxilliary method to find difference of absolute values 
+// Auxilliary method to find difference of absolute values
+// Detects which is bigger by absolute value, and returns abs(*this) - abs(a2) (if abs(*this) > abs(a2)
+// or abs(a2) - abs(*this)
 CNumber CNumber::sub_abs(const CNumber& a2) const 
 {
 	CBigInt nzeroes;
@@ -560,7 +578,6 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 		subtrahend = a2;
 	}
 	
-	// Minuend - subtrahend
 	if (CBigInt(static_cast<int>(CConstants::EXP_DIFFERENCE_LIMIT)) < nzeroes) {
 		// Calculation of the expression like "1e+1000000000-1e-1000000000" leads to mantissa looking like
 		// "1000*000.000*0001" which is very long. So EXP_DIFFERENCE_LIMIT is introduced to 
@@ -568,6 +585,8 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 		throw "Difference of exponents is too big";
 	}
 
+	// Minuend - subtrahend
+	
 	// To do "subtraction in columns" align operands by the least decimal place, 
 	// ie. if minuend = [m = 1234, exp = 4] and subtrahend = [m = 1, exp = -2] 
 	// we have to append mantissa of menuend to 123400    
@@ -587,24 +606,13 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 	}
 	
 	// Do the subtraction in columns 
-	res.m_Mantissa = sub2(minuend.m_Mantissa, subtrahend.m_Mantissa);
+	res.m_Mantissa = column_sub(minuend.m_Mantissa, subtrahend.m_Mantissa);
 	res.m_Exp = minuend.m_Exp;
 	
 	// Optimize result by removing lzeroes and mantissa of results
 	int lzero = res.m_Mantissa.remove_leading_zeroes();
 	res.m_Exp -= CBigInt (lzero);
 	 
-/*	
-	if (this->m_positive == a2.m_positive) {
-		if (rc < 0) {
-			res.m_positive = !a2.m_positive;
-		}
-		else {
-			// abs(this) >= abs(a2)
-			res.m_positive = this->m_positive;
-		}
-	}
-*/
 	return res;
 }
 
