@@ -104,10 +104,10 @@ CNumber expr(CLexer& lex)
 
 // This is called ':' is read from input stream
 // Then it parses and executes admin command
-// Return: none
+// Return: boolean, true if :quit was handled
 // Arguments:
 //	 lex - Clexer object. It contains expression to execute in istringstream(m_sin).
-void admin_commands(CLexer& lex)
+bool admin_commands(CLexer& lex)
 {
 	CAdmin* adm = lex.adminop();
 	if (adm != nullptr) {
@@ -118,6 +118,7 @@ void admin_commands(CLexer& lex)
 	else {
 		cout << "Unknown command" << endl;
 	}
+	return lex.is_calc_over();
 }
 
 // This parses strings like "Pi=3.14"
@@ -182,7 +183,10 @@ int main()
 			}
 			if (c == ':') {
 				// :quit, :history, :clear, :help, :variables, :num
-				admin_commands(lex);
+				if (admin_commands(lex)) {
+					// :quit was entered
+					break;
+				}
 				continue;
 			}
 			if (isalpha(c)) {

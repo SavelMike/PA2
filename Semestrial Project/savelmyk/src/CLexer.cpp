@@ -6,7 +6,7 @@
 // CLexer default constructor
 //		calculates home directory using environment variables
 //		loads variable from file $HOME/.savelmyk_vars 
-CLexer::CLexer() :m_parenths(0)
+CLexer::CLexer() :m_parenths(0), m_calc_over(false)
 {
 #ifdef _WIN32
 	m_homedir = getenv("HOMEDRIVE");

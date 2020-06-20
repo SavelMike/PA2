@@ -4,13 +4,12 @@
 
 // Virtual method cmd for class CQuit
 // Saves variables to file $HOME/.savelmyk_vars
-// Terminates the program
+// Set calc_over flag
 // It is triggered via :quit
 void CQuit::cmd(CLexer& lex)
 {
 	lex.save_variables();
-	delete this;
-	exit(0);
+	lex.calc_over();
 }
 
 // Virtual method cmd for class CHelp

@@ -25,9 +25,12 @@ public:
 	void save_variables();
 	int get_int(const string& str);
 	const string& get_home_dir() const { return m_homedir; }
+	void calc_over() { m_calc_over = true; }
+	bool is_calc_over() { return m_calc_over; }
 private:
 	map<string, CNumber> m_vars;
 	istringstream m_sin;
 	int m_parenths; // Number of open parenthesis
 	string m_homedir;
+	bool m_calc_over;
 };
