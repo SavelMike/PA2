@@ -360,7 +360,6 @@ void CLexer::save_command(const string& str)
 }
 
 // This is part of CLexer constructor, opens $HOME/.savelmyk_vars and builds m_vars map
-// 
 void CLexer::load_variables()
 {
 	ifstream vars;

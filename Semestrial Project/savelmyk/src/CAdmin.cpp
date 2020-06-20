@@ -2,6 +2,10 @@
 #include "CLexer.h"
 #include <fstream>
 
+// Virtual method cmd for class CQuit
+// Saves variables to file $HOME/.savelmyk_vars
+// Terminates the program
+// It is triggered via :quit
 void CQuit::cmd(CLexer& lex)
 {
 	lex.save_variables();
@@ -9,6 +13,9 @@ void CQuit::cmd(CLexer& lex)
 	exit(0);
 }
 
+// Virtual method cmd for class CHelp
+// Outputs the help information
+// It is triggered via :help
 void CHelp::cmd(CLexer& lex)
 {
 	cout << endl;
@@ -20,6 +27,10 @@ void CHelp::cmd(CLexer& lex)
 	cout << "	:variables - displays list of variables and their values." << endl;
 }
 
+// Virtual method cmd for class CHistory
+// List operations history which is saved in $HOME/.savelmyk_history
+// Operations are numbered
+// It is triggered via :history
 void CHistory::cmd(CLexer& lex)
 {
 	ifstream history;
@@ -36,12 +47,19 @@ void CHistory::cmd(CLexer& lex)
 	history.close();
 }
 
+// Virtual method cmd for class CClear
+// Removes $HOME/.savelmyk_history
+// It is triggered via :clear
 void CClear::cmd(CLexer& lex)
 {
 	string filename = lex.get_home_dir() + ".savelmyk_history";
 	remove(filename.c_str());
 }
 
+// Virtual method cmd for class CVariables
+// Variables are in map<string, CNumber> lex.m_vars
+// Output all variables in format "name = value"
+// It is triggered via :variables
 void CVariables::cmd(CLexer& lex)
 {
 	for (auto x : lex.get_m_vars()) {
@@ -51,6 +69,10 @@ void CVariables::cmd(CLexer& lex)
 
 CNumber expr(CLexer& lex);
 
+// Virtual method cmd for class CRepeat
+// Read number of command to be repeated
+// Find the requested command in $HOME/.savelmyk_history and calculates the expression
+// It is triggered via :[1-9]+
 void CRepeat::cmd(CLexer& lex)
 {
 	string str;
@@ -73,7 +95,7 @@ void CRepeat::cmd(CLexer& lex)
 			}
 			lex.putback(c);
 			if (str.find('=') != string::npos) {
-				// = is found, this is set var
+				// '=' is found, this is set var
 				cerr << "Don't repeat set_var" << endl;
 				break;
 			}

@@ -27,6 +27,7 @@ CBigInt::CBigInt(int val)
 
 // Addition by columns
 // Returns abs(v1) + abs(v2)
+// extrarank is set true if extra decimal place is created
 static CBigInt column_add(const CBigInt& v1, const CBigInt& v2, bool& extrarank)
 {
 	int carry = 0;
@@ -111,17 +112,21 @@ static CBigInt column_sub(const CBigInt& v1, const CBigInt& v2)
 	return res;
 }
 
+// CBigInt::operator+ ()
+// if addendums are of the same sign - sum absolute values and set correct sign
+// if addendums are of different sign - sub absolute values and set correct sign
 CBigInt CBigInt::operator+(const CBigInt& add2) const
 {
-	bool rank = true;
+	bool unused = true;
 	if (this->is_positive() && add2.is_positive()) {
-		return column_add(*this, add2, rank);
+		return column_add(*this, add2, unused);
 	}
 	if (!this->is_positive() && !add2.is_positive()) {
-		CBigInt res = column_add(*this, add2, rank);
+		CBigInt res = column_add(*this, add2, unused);
 		res.set_negative();
 		return res;
 	}
+	// Compare absolute values of addendums 
 	int rc = this->cmp_abs(add2);
 	if (rc < 0) {
 		// abs(this) < abs(add2)
@@ -135,9 +140,11 @@ CBigInt CBigInt::operator+(const CBigInt& add2) const
 		res.set_sign(this->get_sign());
 		return res;
 	}
-
 }
 
+// CBigInt::operator+= ()
+// increase *this by diff
+// return new value of this
 CBigInt& CBigInt::operator+=(const CBigInt& diff)
 {
 	CBigInt res = *this + diff;
@@ -146,9 +153,13 @@ CBigInt& CBigInt::operator+=(const CBigInt& diff)
 	return *this;
 }
 
+// CBigInt::operator- ()
+// if operands are of the same sign - sub absolute values and set correct sign
+// if operands are of different sign - sum absolute values and set correct sign
 CBigInt CBigInt::operator-(const CBigInt& sub2) const
 {
 	if (this->is_positive() && sub2.is_positive()) {
+		// Both are +, we have to sub, compare abs values
 		if (this->cmp_abs(sub2) < 0) {
 			// abs(this) < abs(sub2)
 			CBigInt res = column_sub(sub2, *this);
@@ -161,6 +172,7 @@ CBigInt CBigInt::operator-(const CBigInt& sub2) const
 		}
 	}
 	if (!this->is_positive() && !sub2.is_positive()) {
+		// Both are -, we have to sub, compare abs values
 		int rc = this->cmp_abs(sub2);
 		if (rc <= 0) {
 			// abs(this) <= abs(sub2)
@@ -174,8 +186,10 @@ CBigInt CBigInt::operator-(const CBigInt& sub2) const
 			return res;
 		}
 	}
-	bool rank = true;
-	CBigInt res = column_add(*this, sub2, rank);
+	
+	// Different signs, do add
+	bool unused = true;
+	CBigInt res = column_add(*this, sub2, unused);
 	res.set_sign(this->get_sign());
 
 	return res;
@@ -192,7 +206,9 @@ CBigInt& CBigInt::operator-=(const CBigInt& diff)
 	return *this;
 }
 
+// CBigInt::operator* ()
 // Multiplication by column
+// return *this * multiplier
 CBigInt CBigInt::operator*(const CBigInt& multiplier) const
 {
 	unsigned char z;
@@ -249,12 +265,15 @@ int CBigInt::cmp_abs(const CBigInt& a2) const
 	int l2 = a2.m_data.end() - i2;
 
 	if (l1 > l2) {
+		// abs(*this) > abs(a2)
 		return 1;
 	}
 	if (l1 < l2) {
+		// abs(*this) < abs(a2)
 		return -1;
 	}
 	
+	// Numbers have the same length
 	for (; i1 != this->m_data.end(); i1++, i2++) {
 		if (*i1 < *i2) {
 			return -1;
@@ -264,11 +283,13 @@ int CBigInt::cmp_abs(const CBigInt& a2) const
 		}
 	}
 	
+	// abs(*this) == abs(a2)
 	return 0;
 }
 
+// CBigInt::operator< ()
 // Return values:
-// true if this < a
+// true if *this < a
 // false otherwise
 bool CBigInt::operator<(const CBigInt& a) const
 {
@@ -282,10 +303,10 @@ bool CBigInt::operator<(const CBigInt& a) const
 	// Both operands have the same sign, compare absolute values
 	int res = this->cmp_abs(a);
 	if (res == -1) {
-		return this->get_sign();
+		return this->is_positive() ? true : false;
 	}
 	if (res == 1) {
-		return !this->get_sign();
+		return this->is_positive() ? false : true;
 	}
 	return false;
 }
@@ -373,12 +394,11 @@ ostream& operator <<(ostream& os, const CBigInt& num)
 
 // CNumber::add_abs()
 // Auxilliary method to find sum of absolute values
-// Detects which is bigger by absolute value, and returns abs(*this) - abs(a2) (if abs(*this) > abs(a2)
-// or abs(a2) - abs(*this)
+// Returns abs(*this) + abs(a2)
 CNumber CNumber::add_abs(const CNumber& a2) const 
 {
 	CNumber res;
-	CNumber addendum1; // Addendum with smaller exponent
+	CNumber addendum1;
 	CNumber addendum2;
 	CBigInt nzeroes;
 
@@ -446,8 +466,8 @@ CNumber CNumber::operator+(const CNumber& a2) const
 		return *this;
 	}
 	
-	// Sum of addendums with same signs 
 	if (this->m_positive == a2.m_positive) {
+		// Sum of addendums with same signs
 		res = this->add_abs(a2);
 		res.m_positive = this->m_positive;
 		res.remove_zeroes();
@@ -525,9 +545,9 @@ CNumber CNumber::sub_abs(const CNumber& a2) const
 	res.m_Mantissa = column_sub(minuend.m_Mantissa, subtrahend.m_Mantissa);
 	res.m_Exp = minuend.m_Exp;
 	
-	// Optimize result by removing lzeroes and mantissa of results
+	// Optimize result by removing leading zeroes and updating exponent of result
 	int lzero = res.m_Mantissa.remove_leading_zeroes();
-	res.m_Exp -= CBigInt (lzero);
+	res.m_Exp -= CBigInt(lzero);
 	 
 	return res;
 }
@@ -602,7 +622,6 @@ CNumber CNumber::operator *(const CNumber& a2) const
 	// ie. [m = 25, exp = 2] * [m = 5, exp = 1] = [m = 125, exp = 3]
 	//	   [m = 25, exp = 2] * [m = 3, exp = 1] = [m = 75, exp = 3] not correct. exp has to be 3 - 1
 	res.m_Exp -= CBigInt(this->m_Mantissa.length() + a2.m_Mantissa.length() - res.m_Mantissa.length());
-
 	res.remove_zeroes();
 	return res; 
 }
@@ -696,6 +715,7 @@ CNumber CNumber::operator /(const CNumber& a2) const
 bool CNumber::is_positive_integer() const
 {
 	CBigInt m_length(this->m_Mantissa.length());
+	// exponent >= length of mantissa, *this is positive, exponent is positive, *this is not zero
 	return ((m_length.cmp_abs(this->m_Exp) <= 0) && (this->m_positive) && this->m_Exp.is_positive() && !this->isZero());
 }
 
