@@ -50,8 +50,18 @@ CNumber factor(CLexer& lex)
 		}
 		CNumber v2 = operand(lex);
 		// The below will run CMul::operation or CDiv::operation or CMod::operation
-		v1 = op->operation(&v1, &v2);
+		const char* exception = nullptr;
+		// catch exception to be able to delete op
+		try {
+			v1 = op->operation(&v1, &v2);
+		}
+		catch (const char* str) {
+			exception = str;
+		}
 		delete op;
+		if (exception) {
+			throw exception;
+		}
 	}
 	
 	throw "Unexpected return from factor()";
@@ -76,6 +86,7 @@ CNumber expr(CLexer& lex)
 
 		// The below will run CAdd::operation or CSub::operation 
 		const char* exception = nullptr;
+		// catch exception to be able to delete op
 		try {
 			v1 = op->operation(&v1, &v2);
 		}
