@@ -27,7 +27,7 @@ CBigInt::CBigInt(int val)
 
 // Addition by columns
 // Returns abs(v1) + abs(v2)
-static CBigInt add(const CBigInt& v1, const CBigInt& v2)
+static CBigInt column_add(const CBigInt& v1, const CBigInt& v2, bool& extrarank)
 {
 	int carry = 0;
 	CBigInt res;
@@ -59,100 +59,8 @@ static CBigInt add(const CBigInt& v1, const CBigInt& v2)
 		res.head_insert(sum);
 	}
 	if (carry != 0) {
-		res.head_insert(carry);
-	}
-
-	return res;
-}
-
-// This function sums v1 and v2. These are aligned by least decimal place, etc: 
-// 12345000
-//		777
-static CBigInt column_add(const CBigInt& v1, const CBigInt& v2, bool& extrarank)
-{
-	deque<unsigned char>::const_reverse_iterator i1;
-	deque<unsigned char>::const_reverse_iterator i1end;
-	deque<unsigned char>::const_reverse_iterator i2;
-	deque<unsigned char>::const_reverse_iterator i2end;
-	int nzeroes;
-	CBigInt res;
-	int carry = 0;
-
-	i1 = v1.get_data().rbegin();
-	i1end = v1.get_data().rend();
-	i2 = v2.get_data().rbegin();
-	i2end = v2.get_data().rend();
-	for (; i1 != i1end || i2 != i2end;) {
-		unsigned char a1;
-		unsigned char a2;
-		if (i1 != i1end) {
-			a1 = *i1;
-			i1++;
-		}
-		else {
-			a1 = 0;
-		}
-		if (i2 != i2end) {
-			a2 = *i2;
-			i2++;
-		}
-		else {
-			a2 = 0;
-		}
-
-		unsigned char sum = a1 + a2 + carry;
-		res.head_insert(sum % 10);
-		carry = sum / 10;
-	}
-	if (carry != 0) {
 		extrarank = true;
 		res.head_insert(carry);
-	}
-	
-	return res;
-}
-
-// Returns abs(v1) - abs(v2)
-static CBigInt sub(const CBigInt& v1, const CBigInt& v2)
-{
-	deque<unsigned char>::const_reverse_iterator minuend;
-	deque<unsigned char>::const_reverse_iterator subtrahend;
-	deque<unsigned char>::const_reverse_iterator endup;
-	deque<unsigned char>::const_reverse_iterator enddown;
-
-	minuend = v1.get_data().rbegin();
-	endup = v1.get_data().rend();
-	subtrahend = v2.get_data().rbegin();
-	enddown = v2.get_data().rend();
-
-	CBigInt res;
-
-	int carry1 = 0;
-	int carry2 = 0;
-	
-	for (; minuend != endup; ) {
-		unsigned char dif;
-		unsigned char s1;
-		unsigned char s2;
-
-		s1 = *minuend;
-		minuend++;
-		
-		if (subtrahend == enddown) {
-			s2 = 0;
-		}
-		else {
-			s2 = *subtrahend;
-			subtrahend++;
-		}
-		carry2 = 0;
-		if (s1 < (s2 + carry1)) {
-			s1 += 10;
-			carry2 = 1;
-		}
-		dif = s1 - s2 - carry1;
-		carry1 = carry2;
-		res.head_insert(dif);
 	}
 
 	return res;
@@ -171,7 +79,6 @@ static CBigInt column_sub(const CBigInt& v1, const CBigInt& v2)
 	endup = v1.get_data().rend();
 	subtrahend = v2.get_data().rbegin();
 	enddown = v2.get_data().rend();
-	int nzeroes = v1.get_data().size() - v2.get_data().size();
 
 	CBigInt res;
 
@@ -206,24 +113,25 @@ static CBigInt column_sub(const CBigInt& v1, const CBigInt& v2)
 
 CBigInt CBigInt::operator+(const CBigInt& add2) const
 {
+	bool rank = true;
 	if (this->is_positive() && add2.is_positive()) {
-		return add(*this, add2);
+		return column_add(*this, add2, rank);
 	}
 	if (!this->is_positive() && !add2.is_positive()) {
-		CBigInt res = add(*this, add2);
+		CBigInt res = column_add(*this, add2, rank);
 		res.set_negative();
 		return res;
 	}
 	int rc = this->cmp_abs(add2);
 	if (rc < 0) {
 		// abs(this) < abs(add2)
-		CBigInt res = sub(add2, *this);
+		CBigInt res = column_sub(add2, *this);
 		res.set_sign(add2.get_sign());
 		return res;
 	}
 	else {
 		// abs(this) >= abs(add2)
-		CBigInt res = sub(*this, add2);
+		CBigInt res = column_sub(*this, add2);
 		res.set_sign(this->get_sign());
 		return res;
 	}
@@ -239,15 +147,15 @@ CBigInt& CBigInt::operator+=(const CBigInt& diff)
 }
 
 CBigInt CBigInt::operator-(const CBigInt& sub2) const
-{ 
+{
 	if (this->is_positive() && sub2.is_positive()) {
 		if (this->cmp_abs(sub2) < 0) {
 			// abs(this) < abs(sub2)
-			CBigInt res = sub(sub2, *this);
+			CBigInt res = column_sub(sub2, *this);
 			res.set_negative();
 			return res;
 		} else {
-			CBigInt res = sub(*this, sub2);
+			CBigInt res = column_sub(*this, sub2);
 			res.set_positive();
 			return res;
 		}
@@ -256,17 +164,18 @@ CBigInt CBigInt::operator-(const CBigInt& sub2) const
 		int rc = this->cmp_abs(sub2);
 		if (rc <= 0) {
 			// abs(this) <= abs(sub2)
-			CBigInt res = sub(sub2, *this);
+			CBigInt res = column_sub(sub2, *this);
 			res.set_positive();
 			return res;
 		}
 		else {
-			CBigInt res = sub(*this, sub2);
+			CBigInt res = column_sub(*this, sub2);
 			res.set_negative();
 			return res;
 		}
 	}
-	CBigInt res = add(*this, sub2);
+	bool rank = true;
+	CBigInt res = column_add(*this, sub2, rank);
 	res.set_sign(this->get_sign());
 
 	return res;
