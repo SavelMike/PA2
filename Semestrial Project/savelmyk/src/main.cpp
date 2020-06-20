@@ -75,8 +75,17 @@ CNumber expr(CLexer& lex)
 		CNumber v2 = factor(lex);
 
 		// The below will run CAdd::operation or CSub::operation 
-		v1 = op->operation(&v1, &v2);
+		const char* exception = nullptr;
+		try {
+			v1 = op->operation(&v1, &v2);
+		}
+		catch (const char* str) {
+			exception = str;
+		}
 		delete op;
+		if (exception) {
+			throw exception;
+		}
 	}
 	
 	throw "Unexpected return from expr()";
