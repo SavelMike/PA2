@@ -5,10 +5,13 @@
 #include <iterator>
 #include <cassert>
 
+// CBigInt constructor
+// Convert integers to deque of decimal digits
 CBigInt::CBigInt(int val)
 {
 	this->m_positive = (val >= 0);
 	if (val < 0) {
+		// This is for val % 10
 		val *= (-1);
 	}
 	while (1) {
@@ -22,6 +25,7 @@ CBigInt::CBigInt(int val)
 	m_ntoprint = 0;
 }
 
+// Addition by columns
 // Returns abs(v1) + abs(v2)
 static CBigInt add(const CBigInt& v1, const CBigInt& v2)
 {
@@ -268,6 +272,9 @@ CBigInt CBigInt::operator-(const CBigInt& sub2) const
 	return res;
 }
 
+// CBigInt::operator-= ()
+// Decrease *this by diff
+// Return new value of this
 CBigInt& CBigInt::operator-=(const CBigInt& diff)
 {
 	CBigInt res = *this - diff;
