@@ -695,7 +695,7 @@ CNumber CNumber::operator /(const CNumber& a2) const
 		res.m_Mantissa.tail_append(digit);
 		ndigits += CBigInt(1); 
 		int bc_scale = static_cast<int>(CConstants::BC_SCALE);
-		if (ndigits.cmp_abs(res.m_Exp + CBigInt(bc_scale)) == 0) {
+		if (ndigits.cmp_abs(CBigInt(bc_scale) + CBigInt(bc_scale)) == 0) {
 			// Break endless division so that we have at least BC_SCALE digits after dot
 			break;
 		}
@@ -732,6 +732,12 @@ CNumber CNumber::operator %(const CNumber& a2) const
 	// Convert divider(a2) from mantissa - exponent form to normal notation, 
 	// ie. a2.m_Mantissa = 2, a2.m_exp = 4 then divider = 2000
 	CBigInt divider = a2.m_Mantissa;
+	if (CBigInt(static_cast<int>(CConstants::EXP_DIFFERENCE_LIMIT)) < a2.m_Exp - a2.m_Mantissa.length()) {
+		throw "Exponent of divider is too big for mod operation";
+	}
+	if (CBigInt(static_cast<int>(CConstants::EXP_DIFFERENCE_LIMIT)) < this->m_Exp - this->m_Mantissa.length()) {
+		throw "Exponent of divident is too big for mod operation";
+	}
 	for (CBigInt i(a2.m_Mantissa.length()); i < a2.m_Exp; i += CBigInt(1)) {
 		divider.tail_append(0);
 	}
