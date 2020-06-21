@@ -3,49 +3,132 @@ Task: arbitrary precision calculator
 1. Exact task specification
   User interaction:
     1) Expression evaluation
-    2) Variable assignment: varname = expression
-    3) "quit" - program terminates
-    4) "help" - document available actions
-    5) "save" - save current state of calculator to file
-    6) "load" - load previously saved state back from file
+	Example: 12345 * 5 / (10 + 25.5 - .e-17)
+    2) Variable assignment: varname=expression
+	Example: Pi=3.1415926535
+		 area=Pi * 4 * 4 / 2
+    3) ":quit" - program terminates
+    4) ":help" - document available actions
+    5) ":history" - display entered commands
+	 The history is saved in $HOME/.savelmyk_history
+    6) ":clear" - removes $HOME/.savelmyk_history
+    7) ":variables" - list set of variables in form "name = value"
+	Variables are saved in $HOME/.savelmyk_vars
+    8) ":[1-9]+" - repeat chosen command from history
+	  
 
 2. Polymorphism design
 Thre main classes:
  CLexer:
-	Reads input, returns object of class CNumber or object of class COperation
+	Reads input, parses numbers, operators(+, -, *, /, %) or admin commands (:quit, :history, etc). 
+	Returns object of class CNumber or 
+		objects of class CAdd, CSub, CMul, CDiv, CMod (based on COperation) or 
+		objects of class CQuit, CHistory, etc (based on CAdmin).
+ 
+ CBigInt:
+	Represents "arbitrary long integers" using deque<unsigned char>. 
+	Provides operators +, -, *, <, etc. Operators +, -, * are implemented via using algorithm of manual calculation ("by columns").  
  CNumber:
-	It stores information about number in three vectors of integers:
-		a) integer part
-		b) fractional part
-		c) exponent
-	For example:  1.2E-3: 1 goes to integer part, 2 goes to fractional part and 3 goes to exponential part
+	Represents "arbitrary precision real numbers", ie. 123e-10000000000000000000000000000
+	It stores information about number in 2 CBigInt objects:	
+		a) mantissa
+		b) exponent
+	For example:  1.2E-3: mantissa = "12", exponent = "-2". That is 0.12 * 10^(-2)
 
-	Overloaded operators: +, -, *, /, %.
+	Provides operators: +, -, *, /, %. Their implementations are using CBigInt operators.
  COperation:
-	Base class.
-	Virtual method: CNumber operation (CNumber v1, CNumber v2);
+	Base class. 
+	Defines virtual method: CNumber operation (CNumber v1, CNumber v2); 
 
 Derived classes from COperation:
  CAdd: public COperation
+	CAdd::operation()
+		returns CNumber + CNumber
+		Limitation:
+		  exponents should not differ too much (CConstants::EXP_DIFFERENCE_LIMIT = 4096)  
  CSub: public COperation
+	CSub::operation()
+ 		returns CNumber - CNumber
+		Limitation:
+		  exponents should not differ too much (CConstants::EXP_DIFFERENCE_LIMIT = 4096)
  CMul: public COperation
+	CMul::operation()
+		returns CNumber * CNumber
  CDiv: public COperation
+	CDiv::operation()
+		returns CNumber / CNumber
+		Limitation:
+		  Division by 0 throws exception
+		  When endless division, division is interrupted to have CConstants::BC_SCALE=1024 symbols after dot 
  CMod: public COperation
-    They implement virtual method operation().
+	CMod::operation()
+		returns CNumber % CNumber
+		Limitation:
+		 this is only for positive integers
 
-Derived class from CNumber:
- CVariable: public CNumber
-    Used to handle variables
+ CAmin: 
+	Base class.
+	Defines virtual method: void cmd(CLexer& lex)
+Derived classes from CAdmin:
+ CQuit: public CAdmin
+ CHistory: public CAdmin
+ CHelp: public CAdmin
+ CClear: public CAdmin
+ CVariables: public CAdmin
+ CRepeat: public CAdmin
+The derived classes implement their particular variants of virtual method cmd.
 
 3. Base implementation - header files with class declarations,
 1) CLexer.h: declares class CLexer.
-2) CNumber.h: declares class CNumber
-3) COperation.h: declares class COperation and classes derived of it
+2) CNumber.h: declares class CBigInt and CNumber
+3) COperation.h: declares base class COperation and classes derived of it
+4) CAdmin.h: declares base class CAdmin and classes derived of it
 
-4. Work in progress implementation - cpp files
-CLexer.cpp, CNumber.cpp, COperation.cpp, main.cpp
+4. cpp files contain all the implementation
+CLexer.cpp, CNumber.cpp, COperation.cpp, Admin.cpp main.cpp
 
+5. Test script
+Use "make test" to run the test
+The test execute various expressions by bc and by the calculator developed
+And compares the output.
 
-
+6. Calculator algorithm draft
+ 
+ expr() {
+	leftoperand = factor();
+	while (1) {
+		op = get_operator();
+		if (op != + && op != -) {
+			break;
+		}		
+		rightoperand = factor();
+		// + or -
+		leftoperand = op(leftoperand, rightoperand);		
+	}
+	return leftoperand;	
+ }
+ 
+ factor() {
+	leftoperand = operand();
+	while (1) {
+		op = get_operator();
+		if (op != * && op != / && op != %) {
+			break;
+		}
+		righoperand = operand();
+		// *, /, %
+		leftoperand = op(leftoperand, rightoperand);
+	}
+	return leftoperand;
+ }
+ 
+ operand() {
+	if (get_char() == "(") {
+		result = expr();
+	} else {
+		result = read_number_or_variable;
+	}
+	return result;
+ }
 
 
